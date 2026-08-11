@@ -1,5 +1,7 @@
 package com.miaupy.shared.exception;
 
+import com.miaupy.scheduling.domain.AppointmentConflictException;
+import com.miaupy.scheduling.domain.InvalidAppointmentTransitionException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +28,18 @@ public class GlobalExceptionHandler {
         HttpStatus.CONFLICT,
         "CONFLICT",
         "Operation conflicts with current state",
+        exception.getMessage());
+  }
+
+  @ExceptionHandler({
+    AppointmentConflictException.class,
+    InvalidAppointmentTransitionException.class
+  })
+  ProblemDetail handleAppointmentConflict(RuntimeException exception) {
+    return problem(
+        HttpStatus.CONFLICT,
+        "APPOINTMENT_CONFLICT",
+        "Appointment conflict",
         exception.getMessage());
   }
 

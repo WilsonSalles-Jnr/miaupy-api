@@ -10,5 +10,8 @@ public interface TenantCustomerRepository {
 
   Optional<TenantCustomer> findByIdAndTenantId(UUID id, Long tenantId);
 
+  Optional<TenantCustomer> findByConsumerProfileIdAndTenantId(
+      UUID consumerProfileId, Long tenantId);
+
   Page<TenantCustomer> findAllByTenantId(Long tenantId, Pageable pageable);
 }

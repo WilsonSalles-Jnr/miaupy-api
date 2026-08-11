@@ -48,6 +48,15 @@ class OutboxEventJpaEntity {
   @Column(name = "created_at", nullable = false)
   Instant createdAt;
 
+  @Column(name = "published_at")
+  Instant publishedAt;
+
+  @Column(name = "retry_count", nullable = false)
+  int retryCount;
+
+  @Column(name = "last_error", length = 1000)
+  String lastError;
+
   protected OutboxEventJpaEntity() {}
 
   OutboxEventJpaEntity(OutboxEvent event) {
@@ -63,5 +72,22 @@ class OutboxEventJpaEntity {
     payload = event.payload();
     status = "PENDING";
     createdAt = Instant.now();
+  }
+
+  void published() {
+    status = "PUBLISHED";
+    publishedAt = Instant.now();
+    lastError = null;
+  }
+
+  void failed(Throwable exception) {
+    retryCount++;
+    lastError = String.valueOf(exception.getMessage());
+    if (lastError.length() > 1000) {
+      lastError = lastError.substring(0, 1000);
+    }
+    if (retryCount >= 10) {
+      status = "FAILED";
+    }
   }
 }

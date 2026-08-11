@@ -1,0 +1,195 @@
+package com.miaupy.scheduling.application;
+
+import com.miaupy.business.domain.AppointmentApprovalMode;
+import com.miaupy.business.domain.Business;
+import com.miaupy.business.domain.BusinessConfigurationRepository;
+import com.miaupy.business.domain.BusinessRepository;
+import com.miaupy.business.domain.BusinessSettings;
+import com.miaupy.consumer.domain.ConsumerProfile;
+import com.miaupy.consumer.domain.ConsumerProfileRepository;
+import com.miaupy.customer.domain.TenantCustomer;
+import com.miaupy.customer.domain.TenantCustomerRepository;
+import com.miaupy.pet.domain.TenantPet;
+import com.miaupy.pet.domain.TenantPetRepository;
+import com.miaupy.scheduling.domain.Appointment;
+import com.miaupy.scheduling.domain.AppointmentConflictException;
+import com.miaupy.scheduling.domain.AppointmentOrigin;
+import com.miaupy.scheduling.domain.AppointmentRepository;
+import com.miaupy.scheduling.domain.AppointmentStatus;
+import com.miaupy.shared.exception.ResourceNotFoundException;
+import com.miaupy.shared.security.ActorContext;
+import com.miaupy.shared.tenant.TenantContext;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.Objects;
+import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class AppointmentUseCase {
+  private final TenantContext tenantContext;
+  private final ActorContext actorContext;
+  private final BusinessRepository businesses;
+  private final BusinessConfigurationRepository configurations;
+  private final ConsumerProfileRepository profiles;
+  private final TenantCustomerRepository customers;
+  private final TenantPetRepository pets;
+  private final AppointmentRepository appointments;
+  private final AppointmentTransaction transaction;
+  private final AppointmentLock lock;
+  private final AvailabilityUseCase availability;
+
+  public AppointmentUseCase(
+      TenantContext tenantContext,
+      ActorContext actorContext,
+      BusinessRepository businesses,
+      BusinessConfigurationRepository configurations,
+      ConsumerProfileRepository profiles,
+      TenantCustomerRepository customers,
+      TenantPetRepository pets,
+      AppointmentRepository appointments,
+      AppointmentTransaction transaction,
+      AppointmentLock lock,
+      AvailabilityUseCase availability) {
+    this.tenantContext = tenantContext;
+    this.actorContext = actorContext;
+    this.businesses = businesses;
+    this.configurations = configurations;
+    this.profiles = profiles;
+    this.customers = customers;
+    this.pets = pets;
+    this.appointments = appointments;
+    this.transaction = transaction;
+    this.lock = lock;
+    this.availability = availability;
+  }
+
+  public Appointment createBusiness(Command command) {
+    Long tenantId = tenantContext.getRequiredTenantId();
+    return create(
+        new AppointmentTransaction.CreateCommand(
+            tenantId,
+            command.customerId(),
+            command.petId(),
+            command.serviceId(),
+            command.employeeId(),
+            AppointmentOrigin.BUSINESS,
+            AppointmentStatus.CONFIRMED,
+            command.startAt(),
+            command.notes()));
+  }
+
+  public Appointment createConsumer(ConsumerCommand command) {
+    ConsumerProfile profile = consumerProfile();
+    Business business =
+        businesses
+            .findPublicBySlug(command.storeSlug().strip().toLowerCase())
+            .orElseThrow(() -> new ResourceNotFoundException("Public store not found"));
+    TenantCustomer customer =
+        customers
+            .findByConsumerProfileIdAndTenantId(profile.id(), business.tenantId())
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Consumer is not linked to this store"));
+    TenantPet pet =
+        pets.findByConsumerPetIdAndTenantId(command.consumerPetId(), business.tenantId())
+            .filter(candidate -> candidate.tenantCustomerId().equals(customer.id()))
+            .orElseThrow(() -> new ResourceNotFoundException("Pet is not linked to this store"));
+    BusinessSettings settings =
+        configurations
+            .findSettingsByTenantId(business.tenantId())
+            .orElseThrow(() -> new ResourceNotFoundException("Business settings not found"));
+    if (!settings.allowOnlineBooking()) {
+      throw new IllegalArgumentException("Online booking is disabled for this store");
+    }
+    boolean available =
+        availability
+            .publicAvailability(
+                command.storeSlug(),
+                command.serviceId(),
+                command.startAt().atZone(ZoneId.of(settings.timezone())).toLocalDate(),
+                command.employeeId())
+            .stream()
+            .anyMatch(
+                slot ->
+                    slot.startAt().equals(command.startAt())
+                        && Objects.equals(slot.employeeId(), command.employeeId()));
+    if (!available) {
+      throw new AppointmentConflictException();
+    }
+    AppointmentStatus initial =
+        settings.appointmentApprovalMode() == AppointmentApprovalMode.AUTOMATIC
+            ? AppointmentStatus.CONFIRMED
+            : AppointmentStatus.REQUESTED;
+    return create(
+        new AppointmentTransaction.CreateCommand(
+            business.tenantId(),
+            customer.id(),
+            pet.id(),
+            command.serviceId(),
+            command.employeeId(),
+            AppointmentOrigin.CUSTOMER,
+            initial,
+            command.startAt(),
+            command.notes()));
+  }
+
+  @Transactional(readOnly = true)
+  public Page<Appointment> listBusiness(int page, int size) {
+    return appointments.findAllByTenantId(tenantContext.getRequiredTenantId(), page(page, size));
+  }
+
+  @Transactional(readOnly = true)
+  public Page<Appointment> listConsumer(int page, int size) {
+    return appointments.findAllByConsumerProfileId(consumerProfile().id(), page(page, size));
+  }
+
+  public Appointment transitionBusiness(UUID id, AppointmentStatus target) {
+    return transaction.transitionBusiness(id, tenantContext.getRequiredTenantId(), target);
+  }
+
+  public Appointment cancelConsumer(UUID id) {
+    return transaction.cancelConsumer(id, consumerProfile().id());
+  }
+
+  private Appointment create(AppointmentTransaction.CreateCommand command) {
+    String resource = Appointment.resource(command.employeeId(), command.serviceId());
+    try {
+      return lock.execute(
+          command.tenantId(), resource, command.startAt(), () -> transaction.create(command));
+    } catch (DataIntegrityViolationException exception) {
+      throw new AppointmentConflictException();
+    }
+  }
+
+  private ConsumerProfile consumerProfile() {
+    String subject = actorContext.getRequiredConsumerSubject();
+    return profiles
+        .findByAuthSubject(subject)
+        .orElseThrow(() -> new ResourceNotFoundException("Consumer profile not found"));
+  }
+
+  private PageRequest page(int page, int size) {
+    return PageRequest.of(page, Math.min(size, 100), Sort.by(Sort.Direction.DESC, "createdAt"));
+  }
+
+  public record Command(
+      UUID customerId,
+      UUID petId,
+      UUID serviceId,
+      UUID employeeId,
+      Instant startAt,
+      String notes) {}
+
+  public record ConsumerCommand(
+      String storeSlug,
+      UUID consumerPetId,
+      UUID serviceId,
+      UUID employeeId,
+      Instant startAt,
+      String notes) {}
+}

@@ -23,6 +23,13 @@ class TenantCustomerRepositoryAdapter implements TenantCustomerRepository {
     return repository.findByIdAndTenantIdAndActiveTrue(id, tenantId).map(this::map);
   }
 
+  public Optional<TenantCustomer> findByConsumerProfileIdAndTenantId(
+      UUID consumerProfileId, Long tenantId) {
+    return repository
+        .findByConsumerProfileIdAndTenantIdAndActiveTrue(consumerProfileId, tenantId)
+        .map(this::map);
+  }
+
   public Page<TenantCustomer> findAllByTenantId(Long tenantId, Pageable p) {
     return repository.findAllByTenantIdAndActiveTrue(tenantId, p).map(this::map);
   }

@@ -13,4 +13,6 @@ public interface OfferedServiceRepository {
   Page<OfferedService> findAllByTenantId(Long tenantId, Pageable pageable);
 
   Page<OfferedService> findPublishedByTenantId(Long tenantId, Pageable pageable);
+
+  Optional<OfferedService> findPublishedByIdAndTenantId(UUID id, Long tenantId);
 }

@@ -4,7 +4,7 @@ API de uma plataforma SaaS multi-tenant para clínicas veterinárias, banho e to
 
 ## Estado atual
 
-O projeto implementa a fundação, a Fase 2 (Empresa e CRM) e a Fase 3 (Catálogo):
+O projeto implementa a fundação e as Fases 2 a 4 (CRM, Catálogo e Agenda):
 
 - Java 21 e Spring Boot 3;
 - Resource Server JWT para atores B2B/B2C;
@@ -21,6 +21,10 @@ O projeto implementa a fundação, a Fase 2 (Empresa e CRM) e a Fase 3 (Catálog
 - publicação explícita e vitrine pública paginada;
 - cache Redis com TTL, invalidação versionada e fallback para PostgreSQL;
 - eventos de catálogo persistidos na outbox na mesma transação da mutação;
+- regras semanais de disponibilidade no timezone da empresa;
+- agendamentos B2B e solicitações B2C com transições de estado centralizadas;
+- proteção contra sobreposição com lock Redis e exclusion constraint PostgreSQL;
+- publisher Kafka da outbox com entrega at-least-once;
 - teste multi-tenant unitário e teste PostgreSQL com Testcontainers.
 
 ## Ambiente local
@@ -77,12 +81,25 @@ Ator B2C:
 | `GET` | `/api/v1/public/stores/{slug}/products` | Público; somente ativos e publicados |
 | `GET` | `/api/v1/public/stores/{slug}/products/{productId}` | Público; somente ativo e publicado |
 | `GET` | `/api/v1/public/stores/{slug}/services` | Público; somente ativos e publicados |
+| `GET/POST/DELETE` | `/api/v1/business/availability-rules` | B2B; regras semanais por tenant |
+| `GET/POST` | `/api/v1/business/appointments` | B2B; listagem e criação |
+| `POST` | `/api/v1/business/appointments/{id}/{action}` | B2B; confirmar, rejeitar, cancelar, iniciar, concluir ou marcar ausência |
+| `GET/POST` | `/api/v1/consumer/me/appointments` | B2C; recursos derivados do `sub` |
+| `POST` | `/api/v1/consumer/me/appointments/{id}/cancel` | B2C; somente agendamento próprio |
+| `GET` | `/api/v1/public/stores/{slug}/availability` | Público; horários disponíveis por serviço e data |
 
 O body do perfil nunca contém `tenantId`; o valor é resolvido a partir do token.
 
 O cache público usa as chaves versionadas `store:{tenantId}:products:*` e
 `store:{tenantId}:services:*`. O TTL padrão é de cinco minutos e pode ser alterado com
 `PUBLIC_CATALOG_CACHE_TTL`.
+
+O lock de agendamento usa `appointment:lock:{tenantId}:{resource}:{startAt}` com TTL de 15
+segundos. A proteção definitiva é a constraint de exclusão PostgreSQL para intervalos
+`[startAt,endAt)` nos estados `REQUESTED`, `CONFIRMED` e `IN_PROGRESS`.
+
+Os eventos da outbox são publicados no tópico `miaupy.domain-events`, configurável por
+`DOMAIN_EVENTS_TOPIC`. A entrega é at-least-once; consumers devem permanecer idempotentes.
 
 ## Testes
 

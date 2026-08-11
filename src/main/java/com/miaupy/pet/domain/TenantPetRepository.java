@@ -10,5 +10,7 @@ public interface TenantPetRepository {
 
   Optional<TenantPet> findByIdAndTenantId(UUID id, Long tenantId);
 
+  Optional<TenantPet> findByConsumerPetIdAndTenantId(UUID consumerPetId, Long tenantId);
+
   Page<TenantPet> findAllByCustomerIdAndTenantId(UUID customerId, Long tenantId, Pageable pageable);
 }

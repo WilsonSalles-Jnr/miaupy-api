@@ -16,6 +16,9 @@ interface SpringDataOfferedServiceRepository extends JpaRepository<OfferedServic
 
   Page<OfferedServiceJpaEntity> findAllByTenantIdAndActiveTrueAndPublishedTrue(
       Long tenantId, Pageable pageable);
+
+  Optional<OfferedServiceJpaEntity> findByIdAndTenantIdAndActiveTrueAndPublishedTrue(
+      UUID id, Long tenantId);
 }
 
 @Repository
@@ -42,6 +45,10 @@ class OfferedServiceRepositoryAdapter implements OfferedServiceRepository {
     return repository
         .findAllByTenantIdAndActiveTrueAndPublishedTrue(tenantId, pageable)
         .map(this::map);
+  }
+
+  public Optional<OfferedService> findPublishedByIdAndTenantId(UUID id, Long tenantId) {
+    return repository.findByIdAndTenantIdAndActiveTrueAndPublishedTrue(id, tenantId).map(this::map);
   }
 
   private OfferedService map(OfferedServiceJpaEntity e) {

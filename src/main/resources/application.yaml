@@ -51,3 +51,7 @@ logging:
 miaupy:
   cache:
     public-catalog-ttl: ${PUBLIC_CATALOG_CACHE_TTL:PT5M}
+  kafka:
+    domain-events-topic: ${DOMAIN_EVENTS_TOPIC:miaupy.domain-events}
+  outbox:
+    publish-delay: ${OUTBOX_PUBLISH_DELAY:PT2S}

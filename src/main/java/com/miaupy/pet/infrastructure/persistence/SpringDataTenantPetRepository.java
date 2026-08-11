@@ -9,6 +9,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 interface SpringDataTenantPetRepository extends JpaRepository<TenantPetJpaEntity, UUID> {
   Optional<TenantPetJpaEntity> findByIdAndTenantIdAndActiveTrue(UUID id, Long tenantId);
 
+  Optional<TenantPetJpaEntity> findByConsumerPetIdAndTenantIdAndActiveTrue(
+      UUID consumerPetId, Long tenantId);
+
   Page<TenantPetJpaEntity> findAllByTenantCustomerIdAndTenantIdAndActiveTrue(
       UUID customerId, Long tenantId, Pageable pageable);
 }

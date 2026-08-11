@@ -9,5 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 interface SpringDataTenantCustomerRepository extends JpaRepository<TenantCustomerJpaEntity, UUID> {
   Optional<TenantCustomerJpaEntity> findByIdAndTenantIdAndActiveTrue(UUID id, Long tenantId);
 
+  Optional<TenantCustomerJpaEntity> findByConsumerProfileIdAndTenantIdAndActiveTrue(
+      UUID consumerProfileId, Long tenantId);
+
   Page<TenantCustomerJpaEntity> findAllByTenantIdAndActiveTrue(Long tenantId, Pageable pageable);
 }

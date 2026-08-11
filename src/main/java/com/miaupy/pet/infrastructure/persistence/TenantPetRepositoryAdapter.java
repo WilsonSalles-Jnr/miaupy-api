@@ -23,6 +23,12 @@ class TenantPetRepositoryAdapter implements TenantPetRepository {
     return repository.findByIdAndTenantIdAndActiveTrue(id, tenant).map(this::map);
   }
 
+  public Optional<TenantPet> findByConsumerPetIdAndTenantId(UUID consumerPetId, Long tenantId) {
+    return repository
+        .findByConsumerPetIdAndTenantIdAndActiveTrue(consumerPetId, tenantId)
+        .map(this::map);
+  }
+
   public Page<TenantPet> findAllByCustomerIdAndTenantId(
       UUID customer, Long tenant, Pageable pageable) {
     return repository
