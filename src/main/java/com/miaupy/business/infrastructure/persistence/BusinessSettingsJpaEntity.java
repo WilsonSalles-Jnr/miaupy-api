@@ -3,6 +3,8 @@ package com.miaupy.business.infrastructure.persistence;
 import com.miaupy.business.domain.*;
 import jakarta.persistence.*;
 import java.time.Instant;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "business_settings", schema = "platform")
@@ -18,7 +20,8 @@ class BusinessSettingsJpaEntity {
   @Column(nullable = false, length = 64)
   String timezone;
 
-  @Column(nullable = false, length = 3)
+  @JdbcTypeCode(SqlTypes.CHAR)
+  @Column(nullable = false, length = 3, columnDefinition = "char(3)")
   String currency;
 
   @Column(name = "allow_online_booking", nullable = false)
