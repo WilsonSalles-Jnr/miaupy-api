@@ -13,21 +13,22 @@ import org.springframework.stereotype.Component;
 @Component
 class SecurityProblemWriter {
 
-    private final ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper;
 
-    SecurityProblemWriter(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
+  SecurityProblemWriter(ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
 
-    void write(HttpServletResponse response, HttpStatus status, String code, String title, String detail)
-            throws IOException {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
-        problem.setType(URI.create("urn:miaupy:problem:" + code.toLowerCase()));
-        problem.setTitle(title);
-        problem.setProperty("code", code);
-        problem.setProperty("traceId", MDC.get("traceId"));
-        response.setStatus(status.value());
-        response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-        objectMapper.writeValue(response.getOutputStream(), problem);
-    }
+  void write(
+      HttpServletResponse response, HttpStatus status, String code, String title, String detail)
+      throws IOException {
+    ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
+    problem.setType(URI.create("urn:miaupy:problem:" + code.toLowerCase()));
+    problem.setTitle(title);
+    problem.setProperty("code", code);
+    problem.setProperty("traceId", MDC.get("traceId"));
+    response.setStatus(status.value());
+    response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+    objectMapper.writeValue(response.getOutputStream(), problem);
+  }
 }

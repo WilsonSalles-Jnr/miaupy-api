@@ -21,24 +21,24 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 class BusinessRepositoryIntegrationTest {
 
-    @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine");
+  @Container
+  static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine");
 
-    @DynamicPropertySource
-    static void databaseProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
-    }
+  @DynamicPropertySource
+  static void databaseProperties(DynamicPropertyRegistry registry) {
+    registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
+    registry.add("spring.datasource.username", POSTGRES::getUsername);
+    registry.add("spring.datasource.password", POSTGRES::getPassword);
+  }
 
-    @Autowired
-    private BusinessRepository repository;
+  @Autowired private BusinessRepository repository;
 
-    @Test
-    void tenantBDoesNotFindTenantAProfile() {
-        repository.save(Business.create(101L, "tenant-a", "Tenant A", null, null, null, null, null, null));
+  @Test
+  void tenantBDoesNotFindTenantAProfile() {
+    repository.save(
+        Business.create(101L, "tenant-a", "Tenant A", null, null, null, null, null, null));
 
-        assertThat(repository.findByTenantId(101L)).isPresent();
-        assertThat(repository.findByTenantId(202L)).isEmpty();
-    }
+    assertThat(repository.findByTenantId(101L)).isPresent();
+    assertThat(repository.findByTenantId(202L)).isEmpty();
+  }
 }

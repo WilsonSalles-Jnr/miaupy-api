@@ -16,39 +16,42 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 
 class JwtTenantContextTest {
 
-    private final JwtTenantContext tenantContext = new JwtTenantContext(new SecurityContextActorContext());
+  private final JwtTenantContext tenantContext =
+      new JwtTenantContext(new SecurityContextActorContext());
 
-    @AfterEach
-    void clearSecurityContext() {
-        SecurityContextHolder.clearContext();
-    }
+  @AfterEach
+  void clearSecurityContext() {
+    SecurityContextHolder.clearContext();
+  }
 
-    @Test
-    void readsTenantOnlyFromAuthenticatedB2bJwt() {
-        authenticate(Map.of("sub", "user-1", "actor_type", "B2B", "tenant_id", 50000101L));
+  @Test
+  void readsTenantOnlyFromAuthenticatedB2bJwt() {
+    authenticate(Map.of("sub", "user-1", "actor_type", "B2B", "tenant_id", 50000101L));
 
-        assertThat(tenantContext.getRequiredTenantId()).isEqualTo(50000101L);
-    }
+    assertThat(tenantContext.getRequiredTenantId()).isEqualTo(50000101L);
+  }
 
-    @Test
-    void rejectsB2cActorEvenWhenTokenContainsTenantClaim() {
-        authenticate(Map.of("sub", "consumer-1", "actor_type", "B2C", "tenant_id", 50000101L));
+  @Test
+  void rejectsB2cActorEvenWhenTokenContainsTenantClaim() {
+    authenticate(Map.of("sub", "consumer-1", "actor_type", "B2C", "tenant_id", 50000101L));
 
-        assertThatThrownBy(tenantContext::getRequiredTenantId)
-                .isInstanceOf(TenantAccessDeniedException.class);
-    }
+    assertThatThrownBy(tenantContext::getRequiredTenantId)
+        .isInstanceOf(TenantAccessDeniedException.class);
+  }
 
-    @Test
-    void rejectsMissingTenantClaim() {
-        authenticate(Map.of("sub", "user-1", "actor_type", "B2B"));
+  @Test
+  void rejectsMissingTenantClaim() {
+    authenticate(Map.of("sub", "user-1", "actor_type", "B2B"));
 
-        assertThatThrownBy(tenantContext::getRequiredTenantId)
-                .isInstanceOf(TenantAccessDeniedException.class);
-    }
+    assertThatThrownBy(tenantContext::getRequiredTenantId)
+        .isInstanceOf(TenantAccessDeniedException.class);
+  }
 
-    private void authenticate(Map<String, Object> claims) {
-        Jwt jwt = new Jwt("token", Instant.now(), Instant.now().plusSeconds(300),
-                Map.of("alg", "none"), claims);
-        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt, List.of()));
-    }
+  private void authenticate(Map<String, Object> claims) {
+    Jwt jwt =
+        new Jwt(
+            "token", Instant.now(), Instant.now().plusSeconds(300), Map.of("alg", "none"), claims);
+    SecurityContextHolder.getContext()
+        .setAuthentication(new JwtAuthenticationToken(jwt, List.of()));
+  }
 }

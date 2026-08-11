@@ -2,7 +2,7 @@ package com.miaupy.shared.security;
 
 public interface ActorContext {
 
-    AuthenticatedActor getRequiredActor();
+  AuthenticatedActor getRequiredActor();
 
-    String getRequiredConsumerSubject();
+  String getRequiredConsumerSubject();
 }

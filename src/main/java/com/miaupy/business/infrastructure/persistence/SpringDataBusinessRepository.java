@@ -6,11 +6,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 interface SpringDataBusinessRepository extends JpaRepository<BusinessJpaEntity, UUID> {
 
-    Optional<BusinessJpaEntity> findByTenantId(Long tenantId);
+  Optional<BusinessJpaEntity> findByTenantId(Long tenantId);
 
-    Optional<BusinessJpaEntity> findBySlugIgnoreCaseAndActiveTrueAndPublicVisibleTrue(String slug);
+  Optional<BusinessJpaEntity> findBySlugIgnoreCaseAndActiveTrueAndPublicVisibleTrue(String slug);
 
-    boolean existsByTenantId(Long tenantId);
+  boolean existsByTenantId(Long tenantId);
 
-    boolean existsBySlugIgnoreCaseAndTenantIdNot(String slug, Long tenantId);
+  boolean existsBySlugIgnoreCaseAndTenantIdNot(String slug, Long tenantId);
 }

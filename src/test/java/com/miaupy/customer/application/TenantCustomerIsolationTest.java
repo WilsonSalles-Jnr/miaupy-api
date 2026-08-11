@@ -11,12 +11,16 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class TenantCustomerIsolationTest {
-    @Test
-    void tenantBDoesNotFindCustomerFromTenantA() {
-        UUID customerId=UUID.randomUUID();TenantContext context=mock(TenantContext.class);TenantCustomerRepository repository=mock(TenantCustomerRepository.class);
-        when(context.getRequiredTenantId()).thenReturn(202L);when(repository.findByIdAndTenantId(customerId,202L)).thenReturn(Optional.empty());
-        TenantCustomerUseCase useCase=new TenantCustomerUseCase(context,repository);
-        assertThatThrownBy(()->useCase.get(customerId)).isInstanceOf(ResourceNotFoundException.class);
-        verify(repository).findByIdAndTenantId(customerId,202L);verify(repository,never()).findByIdAndTenantId(customerId,101L);
-    }
+  @Test
+  void tenantBDoesNotFindCustomerFromTenantA() {
+    UUID customerId = UUID.randomUUID();
+    TenantContext context = mock(TenantContext.class);
+    TenantCustomerRepository repository = mock(TenantCustomerRepository.class);
+    when(context.getRequiredTenantId()).thenReturn(202L);
+    when(repository.findByIdAndTenantId(customerId, 202L)).thenReturn(Optional.empty());
+    TenantCustomerUseCase useCase = new TenantCustomerUseCase(context, repository);
+    assertThatThrownBy(() -> useCase.get(customerId)).isInstanceOf(ResourceNotFoundException.class);
+    verify(repository).findByIdAndTenantId(customerId, 202L);
+    verify(repository, never()).findByIdAndTenantId(customerId, 101L);
+  }
 }

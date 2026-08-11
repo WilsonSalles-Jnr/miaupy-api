@@ -18,32 +18,34 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/business/profile")
 public class BusinessController {
 
-    private final CreateBusinessUseCase createBusiness;
-    private final GetBusinessProfileUseCase getBusinessProfile;
-    private final UpdateBusinessUseCase updateBusiness;
+  private final CreateBusinessUseCase createBusiness;
+  private final GetBusinessProfileUseCase getBusinessProfile;
+  private final UpdateBusinessUseCase updateBusiness;
 
-    public BusinessController(CreateBusinessUseCase createBusiness, GetBusinessProfileUseCase getBusinessProfile,
-                              UpdateBusinessUseCase updateBusiness) {
-        this.createBusiness = createBusiness;
-        this.getBusinessProfile = getBusinessProfile;
-        this.updateBusiness = updateBusiness;
-    }
+  public BusinessController(
+      CreateBusinessUseCase createBusiness,
+      GetBusinessProfileUseCase getBusinessProfile,
+      UpdateBusinessUseCase updateBusiness) {
+    this.createBusiness = createBusiness;
+    this.getBusinessProfile = getBusinessProfile;
+    this.updateBusiness = updateBusiness;
+  }
 
-    @PostMapping
-    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
-    public ResponseEntity<BusinessResponse> create(@Valid @RequestBody BusinessRequest request) {
-        BusinessResponse response = BusinessResponse.from(createBusiness.execute(request.toCommand()));
-        return ResponseEntity.created(URI.create("/api/v1/business/profile")).body(response);
-    }
+  @PostMapping
+  @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
+  public ResponseEntity<BusinessResponse> create(@Valid @RequestBody BusinessRequest request) {
+    BusinessResponse response = BusinessResponse.from(createBusiness.execute(request.toCommand()));
+    return ResponseEntity.created(URI.create("/api/v1/business/profile")).body(response);
+  }
 
-    @GetMapping
-    public BusinessResponse get() {
-        return BusinessResponse.from(getBusinessProfile.execute());
-    }
+  @GetMapping
+  public BusinessResponse get() {
+    return BusinessResponse.from(getBusinessProfile.execute());
+  }
 
-    @PutMapping
-    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
-    public BusinessResponse update(@Valid @RequestBody BusinessRequest request) {
-        return BusinessResponse.from(updateBusiness.execute(request.toCommand()));
-    }
+  @PutMapping
+  @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
+  public BusinessResponse update(@Valid @RequestBody BusinessRequest request) {
+    return BusinessResponse.from(updateBusiness.execute(request.toCommand()));
+  }
 }

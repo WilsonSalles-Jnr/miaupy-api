@@ -1,4 +1,67 @@
 package com.miaupy.business.infrastructure.persistence;
-import com.miaupy.business.domain.BusinessAddress;import jakarta.persistence.*;import java.math.BigDecimal;import java.time.Instant;import java.util.UUID;
-@Entity @Table(name="business_address",schema="platform")
-class BusinessAddressJpaEntity{@Id UUID id;@Column(name="tenant_id",nullable=false)Long tenantId;@Column(name="business_id",nullable=false)UUID businessId;@Column(nullable=false,length=160)String street;@Column(length=30)String number;@Column(length=100)String district;@Column(nullable=false,length=100)String city;@Column(nullable=false,length=80)String state;@Column(name="postal_code",length=20)String postalCode;@Column(precision=10,scale=7)BigDecimal latitude;@Column(precision=10,scale=7)BigDecimal longitude;@Column(name="created_at",nullable=false)Instant createdAt;@Column(name="updated_at",nullable=false)Instant updatedAt;protected BusinessAddressJpaEntity(){}BusinessAddressJpaEntity(BusinessAddress a){id=a.id();tenantId=a.tenantId();businessId=a.businessId();street=a.street();number=a.number();district=a.district();city=a.city();state=a.state();postalCode=a.postalCode();latitude=a.latitude();longitude=a.longitude();createdAt=a.createdAt();updatedAt=a.updatedAt();}}
+
+import com.miaupy.business.domain.BusinessAddress;
+import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+
+@Entity
+@Table(name = "business_address", schema = "platform")
+class BusinessAddressJpaEntity {
+  @Id UUID id;
+
+  @Column(name = "tenant_id", nullable = false)
+  Long tenantId;
+
+  @Column(name = "business_id", nullable = false)
+  UUID businessId;
+
+  @Column(nullable = false, length = 160)
+  String street;
+
+  @Column(length = 30)
+  String number;
+
+  @Column(length = 100)
+  String district;
+
+  @Column(nullable = false, length = 100)
+  String city;
+
+  @Column(nullable = false, length = 80)
+  String state;
+
+  @Column(name = "postal_code", length = 20)
+  String postalCode;
+
+  @Column(precision = 10, scale = 7)
+  BigDecimal latitude;
+
+  @Column(precision = 10, scale = 7)
+  BigDecimal longitude;
+
+  @Column(name = "created_at", nullable = false)
+  Instant createdAt;
+
+  @Column(name = "updated_at", nullable = false)
+  Instant updatedAt;
+
+  protected BusinessAddressJpaEntity() {}
+
+  BusinessAddressJpaEntity(BusinessAddress a) {
+    id = a.id();
+    tenantId = a.tenantId();
+    businessId = a.businessId();
+    street = a.street();
+    number = a.number();
+    district = a.district();
+    city = a.city();
+    state = a.state();
+    postalCode = a.postalCode();
+    latitude = a.latitude();
+    longitude = a.longitude();
+    createdAt = a.createdAt();
+    updatedAt = a.updatedAt();
+  }
+}

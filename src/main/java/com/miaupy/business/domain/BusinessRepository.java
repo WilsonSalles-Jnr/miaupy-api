@@ -4,13 +4,13 @@ import java.util.Optional;
 
 public interface BusinessRepository {
 
-    Business save(Business business);
+  Business save(Business business);
 
-    Optional<Business> findByTenantId(Long tenantId);
+  Optional<Business> findByTenantId(Long tenantId);
 
-    Optional<Business> findPublicBySlug(String slug);
+  Optional<Business> findPublicBySlug(String slug);
 
-    boolean existsByTenantId(Long tenantId);
+  boolean existsByTenantId(Long tenantId);
 
-    boolean existsBySlugAndDifferentTenant(String slug, Long tenantId);
+  boolean existsBySlugAndDifferentTenant(String slug, Long tenantId);
 }

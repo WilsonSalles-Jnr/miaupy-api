@@ -11,25 +11,35 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class UpdateBusinessUseCase {
 
-    private final TenantContext tenantContext;
-    private final BusinessRepository repository;
+  private final TenantContext tenantContext;
+  private final BusinessRepository repository;
 
-    public UpdateBusinessUseCase(TenantContext tenantContext, BusinessRepository repository) {
-        this.tenantContext = tenantContext;
-        this.repository = repository;
-    }
+  public UpdateBusinessUseCase(TenantContext tenantContext, BusinessRepository repository) {
+    this.tenantContext = tenantContext;
+    this.repository = repository;
+  }
 
-    @Transactional
-    public Business execute(BusinessCommand command) {
-        Long tenantId = tenantContext.getRequiredTenantId();
-        Business business = repository.findByTenantId(tenantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Business profile not found"));
-        String slug = CreateBusinessUseCase.normalizeSlug(command.slug());
-        if (repository.existsBySlugAndDifferentTenant(slug, tenantId)) {
-            throw new ConflictException("The requested public slug is already in use");
-        }
-        business.update(slug, command.name(), command.tradeName(), command.document(), command.description(),
-                command.phone(), command.email(), command.website(), command.publicVisible());
-        return repository.save(business);
+  @Transactional
+  public Business execute(BusinessCommand command) {
+    Long tenantId = tenantContext.getRequiredTenantId();
+    Business business =
+        repository
+            .findByTenantId(tenantId)
+            .orElseThrow(() -> new ResourceNotFoundException("Business profile not found"));
+    String slug = CreateBusinessUseCase.normalizeSlug(command.slug());
+    if (repository.existsBySlugAndDifferentTenant(slug, tenantId)) {
+      throw new ConflictException("The requested public slug is already in use");
     }
+    business.update(
+        slug,
+        command.name(),
+        command.tradeName(),
+        command.document(),
+        command.description(),
+        command.phone(),
+        command.email(),
+        command.website(),
+        command.publicVisible());
+    return repository.save(business);
+  }
 }

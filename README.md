@@ -76,3 +76,12 @@ O body do perfil nunca contém `tenantId`; o valor é resolvido a partir do toke
 ```
 
 O teste de integração usa PostgreSQL real e é ignorado automaticamente quando o Docker não está disponível. H2 não é utilizado.
+
+## Formatação
+
+O código Java segue `google-java-format`. Para formatar e verificar:
+
+```powershell
+.\mvnw.cmd fmt:format
+.\mvnw.cmd verify
+```

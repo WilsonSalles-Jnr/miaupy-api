@@ -13,25 +13,26 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class CorrelationIdFilter extends OncePerRequestFilter {
 
-    public static final String HEADER = "X-Correlation-ID";
+  public static final String HEADER = "X-Correlation-ID";
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
-        String traceId = validTraceId(request.getHeader(HEADER));
-        MDC.put("traceId", traceId);
-        response.setHeader(HEADER, traceId);
-        try {
-            filterChain.doFilter(request, response);
-        } finally {
-            MDC.clear();
-        }
+  @Override
+  protected void doFilterInternal(
+      HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+      throws ServletException, IOException {
+    String traceId = validTraceId(request.getHeader(HEADER));
+    MDC.put("traceId", traceId);
+    response.setHeader(HEADER, traceId);
+    try {
+      filterChain.doFilter(request, response);
+    } finally {
+      MDC.clear();
     }
+  }
 
-    private String validTraceId(String candidate) {
-        if (candidate != null && candidate.matches("[A-Za-z0-9._-]{1,64}")) {
-            return candidate;
-        }
-        return UUID.randomUUID().toString();
+  private String validTraceId(String candidate) {
+    if (candidate != null && candidate.matches("[A-Za-z0-9._-]{1,64}")) {
+      return candidate;
     }
+    return UUID.randomUUID().toString();
+  }
 }

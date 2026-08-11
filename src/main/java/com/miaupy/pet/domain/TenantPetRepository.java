@@ -6,7 +6,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface TenantPetRepository {
-    TenantPet save(TenantPet pet);
-    Optional<TenantPet> findByIdAndTenantId(UUID id,Long tenantId);
-    Page<TenantPet> findAllByCustomerIdAndTenantId(UUID customerId,Long tenantId,Pageable pageable);
+  TenantPet save(TenantPet pet);
+
+  Optional<TenantPet> findByIdAndTenantId(UUID id, Long tenantId);
+
+  Page<TenantPet> findAllByCustomerIdAndTenantId(UUID customerId, Long tenantId, Pageable pageable);
 }

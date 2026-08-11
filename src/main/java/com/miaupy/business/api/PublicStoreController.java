@@ -10,14 +10,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/public/stores")
 public class PublicStoreController {
 
-    private final GetPublicBusinessUseCase getPublicBusiness;
+  private final GetPublicBusinessUseCase getPublicBusiness;
 
-    public PublicStoreController(GetPublicBusinessUseCase getPublicBusiness) {
-        this.getPublicBusiness = getPublicBusiness;
-    }
+  public PublicStoreController(GetPublicBusinessUseCase getPublicBusiness) {
+    this.getPublicBusiness = getPublicBusiness;
+  }
 
-    @GetMapping("/{slug}")
-    public PublicStoreResponse getBySlug(@PathVariable String slug) {
-        return PublicStoreResponse.from(getPublicBusiness.execute(slug));
-    }
+  @GetMapping("/{slug}")
+  public PublicStoreResponse getBySlug(@PathVariable String slug) {
+    return PublicStoreResponse.from(getPublicBusiness.execute(slug));
+  }
 }
