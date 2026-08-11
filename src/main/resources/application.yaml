@@ -47,3 +47,7 @@ management:
 logging:
   pattern:
     level: "%5p [traceId=%X{traceId:-}] [tenantId=%X{tenantId:-}] [actorId=%X{actorId:-}]"
+
+miaupy:
+  cache:
+    public-catalog-ttl: ${PUBLIC_CATALOG_CACHE_TTL:PT5M}

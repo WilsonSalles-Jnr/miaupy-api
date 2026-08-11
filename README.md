@@ -4,7 +4,7 @@ API de uma plataforma SaaS multi-tenant para clínicas veterinárias, banho e to
 
 ## Estado atual
 
-O projeto implementa a fundação e a Fase 2 (Empresa e CRM):
+O projeto implementa a fundação, a Fase 2 (Empresa e CRM) e a Fase 3 (Catálogo):
 
 - Java 21 e Spring Boot 3;
 - Resource Server JWT para atores B2B/B2C;
@@ -17,6 +17,10 @@ O projeto implementa a fundação e a Fase 2 (Empresa e CRM):
 - perfil B2C derivado do claim `sub` e pets próprios do consumidor;
 - CRM de clientes e pets internos isolados por tenant;
 - soft delete e optimistic locking nos dados operacionais;
+- catálogo multi-tenant de produtos e serviços;
+- publicação explícita e vitrine pública paginada;
+- cache Redis com TTL, invalidação versionada e fallback para PostgreSQL;
+- eventos de catálogo persistidos na outbox na mesma transação da mutação;
 - teste multi-tenant unitário e teste PostgreSQL com Testcontainers.
 
 ## Ambiente local
@@ -66,8 +70,19 @@ Ator B2C:
 | CRUD | `/api/v1/consumer/me/pets` | B2C; somente pets próprios |
 | CRUD | `/api/v1/business/customers` | B2B; sempre filtrado por tenant |
 | CRUD | `/api/v1/business/customers/{customerId}/pets` e `/api/v1/business/pets/{id}` | B2B; sempre filtrado por tenant |
+| CRUD | `/api/v1/business/products` | B2B; sempre filtrado por tenant |
+| `POST` | `/api/v1/business/products/{id}/publish` e `/unpublish` | B2B com permissão de catálogo |
+| CRUD | `/api/v1/business/services` | B2B; sempre filtrado por tenant |
+| `POST` | `/api/v1/business/services/{id}/publish` e `/unpublish` | B2B com permissão de catálogo |
+| `GET` | `/api/v1/public/stores/{slug}/products` | Público; somente ativos e publicados |
+| `GET` | `/api/v1/public/stores/{slug}/products/{productId}` | Público; somente ativo e publicado |
+| `GET` | `/api/v1/public/stores/{slug}/services` | Público; somente ativos e publicados |
 
 O body do perfil nunca contém `tenantId`; o valor é resolvido a partir do token.
+
+O cache público usa as chaves versionadas `store:{tenantId}:products:*` e
+`store:{tenantId}:services:*`. O TTL padrão é de cinco minutos e pode ser alterado com
+`PUBLIC_CATALOG_CACHE_TTL`.
 
 ## Testes
 
