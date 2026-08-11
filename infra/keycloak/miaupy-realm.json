@@ -1,0 +1,145 @@
+{
+  "realm": "miaupy",
+  "enabled": true,
+  "displayName": "Miaupy",
+  "registrationAllowed": false,
+  "verifyEmail": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "failureFactor": 5,
+  "passwordPolicy": "length(12) and maxLength(128) and notUsername(undefined) and notEmail(undefined) and hashIterations(600000)",
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "no-reply@miaupy.local",
+    "fromDisplayName": "Miaupy",
+    "ssl": "false",
+    "starttls": "false",
+    "auth": "false"
+  },
+  "roles": {
+    "realm": [
+      { "name": "OWNER", "description": "Owner of a provider tenant" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "miaupy-consumer",
+      "name": "Miaupy Consumer Application",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:3000/*"],
+      "webOrigins": ["http://localhost:3000"],
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "defaultClientScopes": ["profile", "email", "roles", "web-origins"],
+      "protocolMappers": [
+        {
+          "name": "miaupy-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "miaupy-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        },
+        {
+          "name": "consumer-actor-type",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "actor_type",
+            "claim.value": "B2C",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "miaupy-business",
+      "name": "Miaupy Business Application",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:3001/*"],
+      "webOrigins": ["http://localhost:3001"],
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "defaultClientScopes": ["profile", "email", "roles", "web-origins"],
+      "protocolMappers": [
+        {
+          "name": "miaupy-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "miaupy-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        },
+        {
+          "name": "business-actor-type",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "actor_type",
+            "claim.value": "B2B",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        },
+        {
+          "name": "tenant-id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "tenant_id",
+            "claim.name": "tenant_id",
+            "jsonType.label": "long",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "miaupy-api",
+      "name": "Miaupy API audience",
+      "enabled": true,
+      "bearerOnly": true
+    },
+    {
+      "clientId": "miaupy-onboarding-service",
+      "name": "Miaupy Onboarding Service",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "${MIAUPY_ONBOARDING_CLIENT_SECRET}",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-miaupy-onboarding-service",
+      "enabled": true,
+      "serviceAccountClientId": "miaupy-onboarding-service",
+      "clientRoles": {
+        "realm-management": ["manage-users", "view-users", "view-realm"]
+      }
+    }
+  ]
+}

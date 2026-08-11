@@ -1,5 +1,7 @@
 package com.miaupy.shared.exception;
 
+import com.miaupy.onboarding.domain.IdentityProviderUnavailableException;
+import com.miaupy.onboarding.domain.RegistrationRateLimitExceededException;
 import com.miaupy.scheduling.domain.AppointmentConflictException;
 import com.miaupy.scheduling.domain.InvalidAppointmentTransitionException;
 import java.net.URI;
@@ -15,6 +17,24 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+  @ExceptionHandler(RegistrationRateLimitExceededException.class)
+  ProblemDetail handleRateLimit(RegistrationRateLimitExceededException exception) {
+    return problem(
+        HttpStatus.TOO_MANY_REQUESTS,
+        "RATE_LIMIT_EXCEEDED",
+        "Too many requests",
+        exception.getMessage());
+  }
+
+  @ExceptionHandler(IdentityProviderUnavailableException.class)
+  ProblemDetail handleIdentityProvider(IdentityProviderUnavailableException exception) {
+    return problem(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        "IDENTITY_PROVIDER_UNAVAILABLE",
+        "Identity provider unavailable",
+        "The identity operation could not be completed safely. Retry later");
+  }
 
   @ExceptionHandler(ResourceNotFoundException.class)
   ProblemDetail handleNotFound(ResourceNotFoundException exception) {

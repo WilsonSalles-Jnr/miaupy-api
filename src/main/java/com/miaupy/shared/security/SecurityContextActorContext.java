@@ -39,4 +39,12 @@ public class SecurityContextActorContext implements ActorContext {
     }
     return actor.subject();
   }
+
+  @Override
+  public boolean isEmailVerified() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    return authentication != null
+        && authentication.getPrincipal() instanceof Jwt jwt
+        && Boolean.TRUE.equals(jwt.getClaimAsBoolean("email_verified"));
+  }
 }

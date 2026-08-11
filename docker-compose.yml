@@ -49,6 +49,34 @@ services:
       timeout: 10s
       retries: 10
 
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-local-admin-change-me}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/miaupy
+      KC_DB_USERNAME: miaupy
+      KC_DB_PASSWORD: miaupy
+      KC_HEALTH_ENABLED: "true"
+      MIAUPY_ONBOARDING_CLIENT_SECRET: ${IDENTITY_CLIENT_SECRET:-local-onboarding-secret-change-me}
+    ports:
+      - "9000:8080"
+    volumes:
+      - ./infra/keycloak:/opt/keycloak/data/import:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+
 volumes:
   miaupy-postgres:
   miaupy-redis:

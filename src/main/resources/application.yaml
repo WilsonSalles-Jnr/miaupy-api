@@ -2,9 +2,9 @@ spring:
   application:
     name: miaupy-api
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5434/miaupy}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:123456}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/miaupy}
+    username: ${DB_USERNAME:miaupy}
+    password: ${DB_PASSWORD:miaupy}
     hikari:
       maximum-pool-size: ${DB_POOL_SIZE:10}
   jpa:
@@ -21,7 +21,9 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: ${AUTH_JWK_SET_URI:http://localhost:9000/oauth2/jwks}
+          issuer-uri: ${AUTH_ISSUER_URI:http://localhost:9000/realms/miaupy}
+          jwk-set-uri: ${AUTH_JWK_SET_URI:http://localhost:9000/realms/miaupy/protocol/openid-connect/certs}
+          audiences: ${AUTH_AUDIENCE:miaupy-api}
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -51,6 +53,17 @@ logging:
     level: "%5p [traceId=%X{traceId:-}] [tenantId=%X{tenantId:-}] [actorId=%X{actorId:-}]"
 
 miaupy:
+  identity:
+    base-url: ${IDENTITY_BASE_URL:http://localhost:9000}
+    realm: ${IDENTITY_REALM:miaupy}
+    client-id: ${IDENTITY_CLIENT_ID:miaupy-onboarding-service}
+    client-secret: ${IDENTITY_CLIENT_SECRET:local-onboarding-secret-change-me}
+    consumer-client-id: ${IDENTITY_CONSUMER_CLIENT_ID:miaupy-consumer}
+  onboarding:
+    registration:
+      ip-limit-per-hour: ${REGISTRATION_IP_LIMIT_PER_HOUR:10}
+      email-limit-per-hour: ${REGISTRATION_EMAIL_LIMIT_PER_HOUR:3}
+      key-secret: ${REGISTRATION_KEY_SECRET:local-rate-limit-secret-change-me}
   cache:
     public-catalog-ttl: ${PUBLIC_CATALOG_CACHE_TTL:PT5M}
   kafka:

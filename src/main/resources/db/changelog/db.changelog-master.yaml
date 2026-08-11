@@ -7,3 +7,5 @@ databaseChangeLog:
       file: db/changelog/changes/003-catalog.sql
   - include:
       file: db/changelog/changes/004-scheduling.sql
+  - include:
+      file: db/changelog/changes/005-onboarding.sql

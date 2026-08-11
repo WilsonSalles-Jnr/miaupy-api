@@ -35,6 +35,7 @@ public class SecurityConfig {
                 authorize
                     .requestMatchers(
                         "/api/v1/public/**",
+                        "/api/v1/auth/consumers/registrations",
                         "/actuator/health/**",
                         "/actuator/info",
                         "/v3/api-docs/**",
@@ -81,6 +82,17 @@ public class SecurityConfig {
       List<GrantedAuthority> authorities = new ArrayList<>();
       addAuthorities(jwt.getClaimAsStringList("authorities"), "", authorities);
       addAuthorities(jwt.getClaimAsStringList("roles"), "ROLE_", authorities);
+      Object realmAccess = jwt.getClaim("realm_access");
+      if (realmAccess instanceof java.util.Map<?, ?> values) {
+        Object roles = values.get("roles");
+        if (roles instanceof Collection<?> roleValues) {
+          roleValues.stream()
+              .filter(String.class::isInstance)
+              .map(String.class::cast)
+              .map(value -> new SimpleGrantedAuthority("ROLE_" + value))
+              .forEach(authorities::add);
+        }
+      }
       return authorities;
     }
 

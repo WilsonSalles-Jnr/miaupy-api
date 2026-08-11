@@ -1,5 +1,7 @@
 # Miaupy API
 
+Cadastro seguro B2C e upgrade para fornecedor: [docs/AUTH_ONBOARDING.md](docs/AUTH_ONBOARDING.md).
+
 API de uma plataforma SaaS multi-tenant para clínicas veterinárias, banho e tosa e pet shops. O projeto segue a arquitetura definida em `PROJECT_DOCUMENTATION.md` e `AGENTS.md`: monólito modular, PostgreSQL como fonte de verdade e isolamento por `tenant_id` extraído exclusivamente do JWT.
 
 ## Estado atual

@@ -45,7 +45,7 @@ public class OpenApiDocumentationCustomizer {
                           operation.setTags(java.util.List.of(tag(path)));
                           documentParameters(operation);
                           documentResponses(operation, method, path);
-                          if (path.startsWith("/api/v1/public/")) {
+                          if (isPublic(path)) {
                             operation.setSecurity(java.util.List.of());
                           } else {
                             operation.addSecurityItem(
@@ -91,7 +91,7 @@ public class OpenApiDocumentationCustomizer {
     operation
         .getResponses()
         .addApiResponse("400", response("Request inválido ou parâmetros malformados."));
-    if (!path.startsWith("/api/v1/public/")) {
+    if (!isPublic(path)) {
       operation
           .getResponses()
           .addApiResponse("401", response("JWT ausente, inválido ou expirado."));
@@ -158,6 +158,8 @@ public class OpenApiDocumentationCustomizer {
   }
 
   private String tag(String path) {
+    if (path.startsWith("/api/v1/auth/")) return "Cadastro e identidade";
+    if (path.contains("provider-upgrades")) return "Upgrade para fornecedor";
     if (path.startsWith("/api/v1/public/"))
       return path.endsWith("/availability") ? "Disponibilidade" : "Vitrine pública";
     if (path.startsWith("/api/v1/consumer/me/appointments")) return "Agendamentos B2C";
@@ -174,6 +176,18 @@ public class OpenApiDocumentationCustomizer {
 
   private static Map<String, EndpointDoc> endpointDocs() {
     Map<String, EndpointDoc> d = new LinkedHashMap<>();
+    add(
+        d,
+        "POST",
+        "/api/v1/auth/consumers/registrations",
+        "Solicitar cadastro de consumidor",
+        "Cria a identidade B2C no provedor externo, exige verificação de e-mail e sempre retorna mensagem genérica para impedir enumeração de contas. A origem e o e-mail protegido por HMAC possuem limites independentes.");
+    add(
+        d,
+        "POST",
+        "/api/v1/consumer/me/provider-upgrades",
+        "Fazer upgrade para empresa fornecedora",
+        "Cria tenant, empresa e configurações de forma atômica e concede OWNER no provedor de identidade. Exige ator B2C com e-mail verificado e Idempotency-Key UUID; retries seguros retomam o workflow sem duplicar empresa.");
     add(
         d,
         "POST",
@@ -492,7 +506,15 @@ public class OpenApiDocumentationCustomizer {
             "UUID opcional do funcionário usado para filtrar disponibilidade ou reservar o recurso."),
         Map.entry("page", "Índice da página, iniciando em zero."),
         Map.entry("size", "Quantidade de elementos por página, entre 1 e 100."),
-        Map.entry("date", "Data local da empresa no formato ISO-8601 YYYY-MM-DD."));
+        Map.entry("date", "Data local da empresa no formato ISO-8601 YYYY-MM-DD."),
+        Map.entry(
+            "Idempotency-Key",
+            "UUID único gerado pelo consumidor. Reutilize o mesmo valor ao repetir a mesma solicitação de upgrade; um corpo diferente gera 409."));
+  }
+
+  private static boolean isPublic(String path) {
+    return path.startsWith("/api/v1/public/")
+        || path.equals("/api/v1/auth/consumers/registrations");
   }
 
   private static Map<String, String> propertyDescriptions() {
@@ -505,6 +527,11 @@ public class OpenApiDocumentationCustomizer {
     p.put("description", "Descrição textual do recurso.");
     p.put("phone", "Telefone de contato.");
     p.put("email", "Endereço de e-mail válido.");
+    p.put(
+        "password",
+        "Senha enviada somente ao provedor de identidade, com 12 a 128 caracteres; nunca é persistida ou registrada em log pela API.");
+    p.put("termsAccepted", "Confirmação obrigatória de aceite dos termos da plataforma.");
+    p.put("message", "Mensagem genérica que não revela se o endereço já possuía cadastro.");
     p.put("website", "URL pública da empresa.");
     p.put("publicVisible", "Indica se a empresa pode aparecer na vitrine pública.");
     p.put("appointmentApprovalMode", "Modo MANUAL ou AUTOMATIC para solicitações B2C.");
@@ -556,6 +583,12 @@ public class OpenApiDocumentationCustomizer {
         "Instante futuro em ISO-8601 UTC/offset; deve corresponder a um slot disponível para B2C.");
     p.put("endAt", "Fim calculado pelo backend a partir da duração do serviço.");
     p.put("status", "Estado atual centralizado do agendamento.");
+    p.put("upgradeId", "UUID do workflow idempotente de upgrade para fornecedor.");
+    p.put("tenantId", "Identificador do tenant criado pelo servidor; nunca é aceito do request.");
+    p.put("businessId", "UUID público da empresa fornecedora criada.");
+    p.put(
+        "nextAction",
+        "Próxima ação necessária para obter um token B2B após a conclusão do upgrade.");
     p.put("requestedBy", "Origem CUSTOMER ou BUSINESS do agendamento.");
     p.put("content", "Elementos da página atual.");
     p.put("page", "Índice da página atual, iniciado em zero.");
@@ -569,6 +602,7 @@ public class OpenApiDocumentationCustomizer {
     return switch (name) {
       case "slug", "storeSlug" -> "clinica-pet-centro";
       case "email" -> "contato@example.com";
+      case "password" -> "example-only-passphrase";
       case "phone" -> "+5511999999999";
       case "timezone" -> "America/Sao_Paulo";
       case "currency" -> "BRL";
@@ -588,6 +622,7 @@ public class OpenApiDocumentationCustomizer {
       case "date" -> "2026-08-11";
       case "id", "productId", "serviceId", "customerId", "employeeId" ->
           "550e8400-e29b-41d4-a716-446655440000";
+      case "Idempotency-Key" -> "7d54213a-d336-4d70-bc8e-7be947060af7";
       default -> null;
     };
   }

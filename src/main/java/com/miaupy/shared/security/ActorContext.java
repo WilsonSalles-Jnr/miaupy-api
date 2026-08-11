@@ -5,4 +5,6 @@ public interface ActorContext {
   AuthenticatedActor getRequiredActor();
 
   String getRequiredConsumerSubject();
+
+  boolean isEmailVerified();
 }
