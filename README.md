@@ -117,3 +117,15 @@ O código Java segue `google-java-format`. Para formatar e verificar:
 .\mvnw.cmd fmt:format
 .\mvnw.cmd verify
 ```
+
+## Swagger / OpenAPI
+
+Com a aplicação em execução, a documentação interativa está disponível em:
+
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+- OpenAPI YAML: `http://localhost:8080/v3/api-docs.yaml`
+
+Na opção **Authorize** da UI, informe um access token JWT. Endpoints B2B exigem os claims
+`actor_type=B2B` e `tenant_id`; endpoints B2C exigem `actor_type=B2C` e usam o claim `sub`.
+As rotas `/api/v1/public/**` podem ser testadas sem token.

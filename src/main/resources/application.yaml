@@ -55,3 +55,14 @@ miaupy:
     domain-events-topic: ${DOMAIN_EVENTS_TOPIC:miaupy.domain-events}
   outbox:
     publish-delay: ${OUTBOX_PUBLISH_DELAY:PT2S}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    persist-authorization: true
+    display-request-duration: true
+    try-it-out-enabled: true
