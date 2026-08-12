@@ -86,6 +86,48 @@ public record Product(
     return copy(false, false, Instant.now());
   }
 
+  public BigDecimal sellingPrice() {
+    return promotionalPrice == null ? price : promotionalPrice;
+  }
+
+  public Product reserveStock(int quantity) {
+    if (quantity <= 0) {
+      throw new IllegalArgumentException("Stock reservation quantity must be greater than zero");
+    }
+    if (!active || !published) {
+      throw new IllegalArgumentException("Product is not available for sale");
+    }
+    if (stockQuantity < quantity) {
+      throw new IllegalArgumentException("Insufficient stock for product " + name);
+    }
+    return withStock(stockQuantity - quantity);
+  }
+
+  public Product restoreStock(int quantity) {
+    if (quantity <= 0) {
+      throw new IllegalArgumentException("Stock restoration quantity must be greater than zero");
+    }
+    return withStock(Math.addExact(stockQuantity, quantity));
+  }
+
+  private Product withStock(int quantity) {
+    return new Product(
+        id,
+        tenantId,
+        sku,
+        name,
+        description,
+        price,
+        promotionalPrice,
+        quantity,
+        active,
+        published,
+        deletedAt,
+        createdAt,
+        Instant.now(),
+        version);
+  }
+
   private Product copy(boolean published, boolean active, Instant deletedAt) {
     return new Product(
         id,

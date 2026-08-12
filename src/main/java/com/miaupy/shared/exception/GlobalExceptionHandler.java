@@ -2,6 +2,7 @@ package com.miaupy.shared.exception;
 
 import com.miaupy.onboarding.domain.IdentityProviderUnavailableException;
 import com.miaupy.onboarding.domain.RegistrationRateLimitExceededException;
+import com.miaupy.order.domain.InvalidOrderTransitionException;
 import com.miaupy.scheduling.domain.AppointmentConflictException;
 import com.miaupy.scheduling.domain.InvalidAppointmentTransitionException;
 import java.net.URI;
@@ -61,6 +62,12 @@ public class GlobalExceptionHandler {
         "APPOINTMENT_CONFLICT",
         "Appointment conflict",
         exception.getMessage());
+  }
+
+  @ExceptionHandler(InvalidOrderTransitionException.class)
+  ProblemDetail handleOrderConflict(InvalidOrderTransitionException exception) {
+    return problem(
+        HttpStatus.CONFLICT, "ORDER_CONFLICT", "Order transition conflict", exception.getMessage());
   }
 
   @ExceptionHandler({

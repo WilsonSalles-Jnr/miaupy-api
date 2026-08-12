@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.stereotype.Repository;
 
 interface SpringDataProductRepository extends JpaRepository<ProductJpaEntity, UUID> {
@@ -19,6 +20,9 @@ interface SpringDataProductRepository extends JpaRepository<ProductJpaEntity, UU
 
   Optional<ProductJpaEntity> findByIdAndTenantIdAndActiveTrueAndPublishedTrue(
       UUID id, Long tenantId);
+
+  @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+  Optional<ProductJpaEntity> findLockedByIdAndTenantId(UUID id, Long tenantId);
 
   boolean existsBySkuIgnoreCaseAndTenantIdAndIdNotAndActiveTrue(String sku, Long tenantId, UUID id);
 }
@@ -51,6 +55,10 @@ class ProductRepositoryAdapter implements ProductRepository {
 
   public Optional<Product> findPublishedByIdAndTenantId(UUID id, Long tenantId) {
     return repository.findByIdAndTenantIdAndActiveTrueAndPublishedTrue(id, tenantId).map(this::map);
+  }
+
+  public Optional<Product> lockByIdAndTenantId(UUID id, Long tenantId) {
+    return repository.findLockedByIdAndTenantId(id, tenantId).map(this::map);
   }
 
   public boolean existsBySkuAndTenantIdAndDifferentId(String sku, Long tenantId, UUID id) {

@@ -37,4 +37,18 @@ class ProductTest {
     assertThat(product.published()).isFalse();
     assertThat(product.deletedAt()).isNotNull();
   }
+
+  @Test
+  void reservesAndRestoresStockWithoutAllowingOverselling() {
+    Product product =
+        Product.create(101L, null, "Food", null, new BigDecimal("10.00"), null, 3).publish();
+
+    Product reserved = product.reserveStock(2);
+
+    assertThat(reserved.stockQuantity()).isEqualTo(1);
+    assertThat(reserved.restoreStock(2).stockQuantity()).isEqualTo(3);
+    assertThatThrownBy(() -> reserved.reserveStock(2))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Insufficient stock");
+  }
 }

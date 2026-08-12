@@ -16,5 +16,7 @@ public interface ProductRepository {
 
   Optional<Product> findPublishedByIdAndTenantId(UUID id, Long tenantId);
 
+  Optional<Product> lockByIdAndTenantId(UUID id, Long tenantId);
+
   boolean existsBySkuAndTenantIdAndDifferentId(String sku, Long tenantId, UUID id);
 }
