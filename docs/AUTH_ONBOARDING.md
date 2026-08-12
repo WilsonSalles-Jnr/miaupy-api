@@ -43,8 +43,10 @@ Content-Type: application/json
 
 O endpoint retorna `202 Accepted` com a mesma mensagem se criar a conta ou se o e-mail já existir,
 evitando enumeração direta. O Keycloak envia a verificação ao Mailpit. Após verificá-la, o cliente usa
-Authorization Code + PKCE no client `miaupy-consumer`. `PUT /api/v1/consumer/me` cria o
-`ConsumerProfile` vinculado ao claim `sub`.
+Authorization Code + PKCE no client `miaupy-consumer`. Na primeira chamada a
+`GET /api/v1/consumer/me`, a API cria automaticamente o `ConsumerProfile` usando `sub`, `name` e
+`email` do token verificado. O `PUT` permanece opcional para completar telefone, documento e data de
+nascimento.
 
 Os limites padrão são 10 tentativas por IP e 3 por e-mail em uma hora. As chaves Redis usam HMAC e
 não contêm IP/e-mail em texto. A API usa o endereço remoto da conexão e não confia diretamente em

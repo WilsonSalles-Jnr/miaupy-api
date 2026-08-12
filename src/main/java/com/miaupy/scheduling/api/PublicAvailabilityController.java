@@ -2,6 +2,8 @@ package com.miaupy.scheduling.api;
 
 import com.miaupy.scheduling.application.AvailabilityUseCase;
 import com.miaupy.scheduling.application.AvailabilityUseCase.AvailableSlot;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
@@ -23,11 +25,22 @@ public class PublicAvailabilityController {
   }
 
   @GetMapping
+  @Operation(
+      summary = "Consultar horários disponíveis",
+      description =
+          "Calcula slots livres no timezone da empresa, removendo intervalos já ocupados.")
   public List<AvailableSlot> availability(
-      @PathVariable String slug,
-      @RequestParam @NotNull UUID serviceId,
-      @RequestParam @NotNull @FutureOrPresent LocalDate date,
-      @RequestParam(required = false) UUID employeeId) {
+      @Parameter(description = "Slug público único da loja.") @PathVariable String slug,
+      @Parameter(description = "UUID do serviço publicado pela loja.") @RequestParam @NotNull
+          UUID serviceId,
+      @Parameter(description = "Data local da empresa no formato YYYY-MM-DD.")
+          @RequestParam
+          @NotNull
+          @FutureOrPresent
+          LocalDate date,
+      @Parameter(description = "UUID opcional do funcionário usado para filtrar a disponibilidade.")
+          @RequestParam(required = false)
+          UUID employeeId) {
     return useCase.publicAvailability(slug, serviceId, date, employeeId);
   }
 }

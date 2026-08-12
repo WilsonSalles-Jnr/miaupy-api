@@ -3,6 +3,9 @@ package com.miaupy.catalog.api;
 import com.miaupy.catalog.application.OfferedServiceUseCase;
 import com.miaupy.catalog.domain.OfferedService;
 import com.miaupy.shared.api.PageResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
@@ -39,13 +42,26 @@ public class OfferedServiceController {
   }
 
   @GetMapping
+  @Operation(
+      summary = "Listar serviços",
+      description = "Lista paginada de serviços ativos pertencentes ao tenant autenticado.")
   public PageResponse<Response> list(
-      @RequestParam(defaultValue = "0") @PositiveOrZero int page,
-      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+      @Parameter(description = "Índice da página, iniciando em zero.")
+          @RequestParam(defaultValue = "0")
+          @PositiveOrZero
+          int page,
+      @Parameter(description = "Quantidade de elementos por página, entre 1 e 100.")
+          @RequestParam(defaultValue = "20")
+          @Min(1)
+          @Max(100)
+          int size) {
     return PageResponse.from(useCase.list(page, size), Response::from);
   }
 
   @PostMapping
+  @Operation(
+      summary = "Criar serviço",
+      description = "Cria serviço inicialmente não publicado no tenant autenticado.")
   @PreAuthorize(WRITE)
   public ResponseEntity<Response> create(@Valid @RequestBody Request request) {
     Response body = Response.from(useCase.create(request.command()));
@@ -53,41 +69,70 @@ public class OfferedServiceController {
   }
 
   @GetMapping("/{id}")
-  public Response get(@PathVariable UUID id) {
+  @Operation(
+      summary = "Consultar serviço",
+      description = "Consulta serviço utilizando obrigatoriamente id e tenant_id.")
+  public Response get(
+      @Parameter(description = "UUID do serviço no tenant autenticado.") @PathVariable UUID id) {
     return Response.from(useCase.get(id));
   }
 
   @PutMapping("/{id}")
+  @Operation(
+      summary = "Atualizar serviço",
+      description = "Atualiza o serviço e invalida o cache público aplicável.")
   @PreAuthorize(WRITE)
-  public Response update(@PathVariable UUID id, @Valid @RequestBody Request request) {
+  public Response update(
+      @Parameter(description = "UUID do serviço no tenant autenticado.") @PathVariable UUID id,
+      @Valid @RequestBody Request request) {
     return Response.from(useCase.update(id, request.command()));
   }
 
   @DeleteMapping("/{id}")
+  @Operation(
+      summary = "Desativar serviço",
+      description = "Executa exclusão lógica e remove o item da vitrine.")
   @PreAuthorize(WRITE)
-  public ResponseEntity<Void> delete(@PathVariable UUID id) {
+  public ResponseEntity<Void> delete(
+      @Parameter(description = "UUID do serviço no tenant autenticado.") @PathVariable UUID id) {
     useCase.delete(id);
     return ResponseEntity.noContent().build();
   }
 
   @PostMapping("/{id}/publish")
+  @Operation(
+      summary = "Publicar serviço",
+      description = "Publica o item ativo na vitrine e persiste evento na outbox.")
   @PreAuthorize(WRITE)
-  public Response publish(@PathVariable UUID id) {
+  public Response publish(
+      @Parameter(description = "UUID do serviço no tenant autenticado.") @PathVariable UUID id) {
     return Response.from(useCase.publish(id));
   }
 
   @PostMapping("/{id}/unpublish")
+  @Operation(
+      summary = "Despublicar serviço",
+      description = "Remove o item da vitrine e invalida o cache público.")
   @PreAuthorize(WRITE)
-  public Response unpublish(@PathVariable UUID id) {
+  public Response unpublish(
+      @Parameter(description = "UUID do serviço no tenant autenticado.") @PathVariable UUID id) {
     return Response.from(useCase.unpublish(id));
   }
 
   public record Request(
-      @NotBlank @Size(max = 180) String name,
-      @Size(max = 3000) String description,
-      @Min(1) @Max(1440) int durationMinutes,
-      @NotNull @Positive @Digits(integer = 17, fraction = 2) BigDecimal price,
-      boolean requiresApproval) {
+      @NotBlank @Size(max = 180) @Schema(description = "Nome comercial do serviço.") String name,
+      @Size(max = 3000) @Schema(description = "Descrição pública do serviço.") String description,
+      @Min(1) @Max(1440) @Schema(description = "Duração positiva do serviço em minutos.")
+          int durationMinutes,
+      @NotNull
+          @Positive
+          @Digits(integer = 17, fraction = 2)
+          @Schema(
+              description = "Preço monetário positivo com até duas casas decimais.",
+              example = "129.90")
+          BigDecimal price,
+      @Schema(description = "Indica se o serviço requer aprovação do estabelecimento.")
+          boolean requiresApproval) {
     OfferedServiceUseCase.Command command() {
       return new OfferedServiceUseCase.Command(
           name, description, durationMinutes, price, requiresApproval);

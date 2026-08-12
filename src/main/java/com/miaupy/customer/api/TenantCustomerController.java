@@ -3,6 +3,9 @@ package com.miaupy.customer.api;
 import com.miaupy.customer.application.TenantCustomerUseCase;
 import com.miaupy.customer.domain.TenantCustomer;
 import com.miaupy.shared.api.PageResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.net.URI;
@@ -21,13 +24,26 @@ public class TenantCustomerController {
   }
 
   @GetMapping
+  @Operation(
+      summary = "Listar clientes",
+      description = "Lista paginada do CRM filtrada pelo tenant do JWT.")
   public PageResponse<Response> list(
-      @RequestParam(defaultValue = "0") @PositiveOrZero int page,
-      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+      @Parameter(description = "Índice da página, iniciando em zero.")
+          @RequestParam(defaultValue = "0")
+          @PositiveOrZero
+          int page,
+      @Parameter(description = "Quantidade de elementos por página, entre 1 e 100.")
+          @RequestParam(defaultValue = "20")
+          @Min(1)
+          @Max(100)
+          int size) {
     return PageResponse.from(useCase.list(page, size), Response::from);
   }
 
   @PostMapping
+  @Operation(
+      summary = "Cadastrar cliente",
+      description = "Cadastra cliente no CRM do tenant sem realizar vínculo B2C automático.")
   @PreAuthorize("hasAuthority('CUSTOMER_WRITE') or hasAnyRole('OWNER','ADMIN','RECEPTIONIST')")
   public ResponseEntity<Response> create(@Valid @RequestBody Request r) {
     Response body = Response.from(useCase.create(r.command()));
@@ -35,29 +51,43 @@ public class TenantCustomerController {
   }
 
   @GetMapping("/{id}")
-  public Response get(@PathVariable UUID id) {
+  @Operation(
+      summary = "Consultar cliente",
+      description = "Consulta cliente utilizando obrigatoriamente id e tenant_id.")
+  public Response get(
+      @Parameter(description = "UUID do cliente no tenant autenticado.") @PathVariable UUID id) {
     return Response.from(useCase.get(id));
   }
 
   @PutMapping("/{id}")
+  @Operation(
+      summary = "Atualizar cliente",
+      description = "Atualiza os dados do cliente dentro do tenant autenticado.")
   @PreAuthorize("hasAuthority('CUSTOMER_WRITE') or hasAnyRole('OWNER','ADMIN','RECEPTIONIST')")
-  public Response update(@PathVariable UUID id, @Valid @RequestBody Request r) {
+  public Response update(
+      @Parameter(description = "UUID do cliente no tenant autenticado.") @PathVariable UUID id,
+      @Valid @RequestBody Request r) {
     return Response.from(useCase.update(id, r.command()));
   }
 
   @DeleteMapping("/{id}")
+  @Operation(
+      summary = "Desativar cliente",
+      description = "Realiza exclusão lógica do cliente do CRM.")
   @PreAuthorize("hasAuthority('CUSTOMER_WRITE') or hasAnyRole('OWNER','ADMIN')")
-  public ResponseEntity<Void> delete(@PathVariable UUID id) {
+  public ResponseEntity<Void> delete(
+      @Parameter(description = "UUID do cliente no tenant autenticado.") @PathVariable UUID id) {
     useCase.delete(id);
     return ResponseEntity.noContent().build();
   }
 
   public record Request(
-      @NotBlank @Size(max = 160) String name,
-      @Email @Size(max = 254) String email,
-      @Size(max = 32) String phone,
-      @Size(max = 32) String document,
-      @Size(max = 2000) String notes) {
+      @NotBlank @Size(max = 160) @Schema(description = "Nome completo do cliente.") String name,
+      @Email @Size(max = 254) @Schema(description = "Endereço de e-mail válido.") String email,
+      @Size(max = 32) @Schema(description = "Telefone de contato.") String phone,
+      @Size(max = 32) @Schema(description = "Documento pessoal do cliente.") String document,
+      @Size(max = 2000) @Schema(description = "Observações internas sobre o cliente.")
+          String notes) {
     TenantCustomerUseCase.Command command() {
       return new TenantCustomerUseCase.Command(name, email, phone, document, notes);
     }

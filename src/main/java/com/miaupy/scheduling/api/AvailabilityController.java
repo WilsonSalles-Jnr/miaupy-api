@@ -2,6 +2,9 @@ package com.miaupy.scheduling.api;
 
 import com.miaupy.scheduling.application.AvailabilityUseCase;
 import com.miaupy.scheduling.domain.AvailabilityRule;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.net.URI;
@@ -29,11 +32,17 @@ public class AvailabilityController {
   }
 
   @GetMapping
+  @Operation(
+      summary = "Listar regras de disponibilidade",
+      description = "Lista regras semanais ativas do tenant autenticado.")
   public List<Response> list() {
     return useCase.listRules().stream().map(Response::from).toList();
   }
 
   @PostMapping
+  @Operation(
+      summary = "Criar regra de disponibilidade",
+      description = "Cria intervalo semanal de atendimento geral ou de um funcionário.")
   @PreAuthorize("hasAnyRole('OWNER','ADMIN','SCHEDULING_MANAGER')")
   public ResponseEntity<Response> create(@Valid @RequestBody Request request) {
     Response body =
@@ -48,17 +57,28 @@ public class AvailabilityController {
   }
 
   @DeleteMapping("/{id}")
+  @Operation(
+      summary = "Desativar regra de disponibilidade",
+      description = "Desativa uma regra semanal pertencente ao tenant.")
   @PreAuthorize("hasAnyRole('OWNER','ADMIN','SCHEDULING_MANAGER')")
-  public ResponseEntity<Void> delete(@PathVariable UUID id) {
+  public ResponseEntity<Void> delete(
+      @Parameter(description = "UUID da regra de disponibilidade no tenant autenticado.")
+          @PathVariable
+          UUID id) {
     useCase.deleteRule(id);
     return ResponseEntity.noContent().build();
   }
 
   public record Request(
-      UUID employeeId,
-      @NotNull DayOfWeek dayOfWeek,
-      @NotNull LocalTime startLocal,
-      @NotNull LocalTime endLocal) {}
+      @Schema(
+              description =
+                  "UUID opcional do funcionário; ausente representa disponibilidade geral.")
+          UUID employeeId,
+      @NotNull @Schema(description = "Dia da semana ISO, de MONDAY a SUNDAY.") DayOfWeek dayOfWeek,
+      @NotNull @Schema(description = "Horário local inicial no formato HH:mm:ss.")
+          LocalTime startLocal,
+      @NotNull @Schema(description = "Horário local final no formato HH:mm:ss.")
+          LocalTime endLocal) {}
 
   public record Response(
       UUID id, UUID employeeId, DayOfWeek dayOfWeek, LocalTime startLocal, LocalTime endLocal) {

@@ -36,7 +36,7 @@
       "redirectUris": ["http://localhost:3000/*"],
       "webOrigins": ["http://localhost:3000"],
       "attributes": { "pkce.code.challenge.method": "S256" },
-      "defaultClientScopes": ["profile", "email", "roles", "web-origins"],
+      "defaultClientScopes": ["basic", "profile", "email", "roles", "web-origins"],
       "protocolMappers": [
         {
           "name": "miaupy-api-audience",
@@ -74,7 +74,7 @@
       "redirectUris": ["http://localhost:3001/*"],
       "webOrigins": ["http://localhost:3001"],
       "attributes": { "pkce.code.challenge.method": "S256" },
-      "defaultClientScopes": ["profile", "email", "roles", "web-origins"],
+      "defaultClientScopes": ["basic", "profile", "email", "roles", "web-origins"],
       "protocolMappers": [
         {
           "name": "miaupy-api-audience",

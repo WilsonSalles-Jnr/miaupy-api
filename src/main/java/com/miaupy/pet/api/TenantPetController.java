@@ -3,6 +3,9 @@ package com.miaupy.pet.api;
 import com.miaupy.pet.application.TenantPetUseCase;
 import com.miaupy.pet.domain.*;
 import com.miaupy.shared.api.PageResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
@@ -23,49 +26,85 @@ public class TenantPetController {
   }
 
   @GetMapping("/customers/{customerId}/pets")
+  @Operation(
+      summary = "Listar pets do cliente",
+      description = "Lista pets internos do cliente, sempre dentro do tenant autenticado.")
   public PageResponse<Response> list(
-      @PathVariable UUID customerId,
-      @RequestParam(defaultValue = "0") @PositiveOrZero int page,
-      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+      @Parameter(description = "UUID do cliente dentro do CRM do tenant autenticado.") @PathVariable
+          UUID customerId,
+      @Parameter(description = "Índice da página, iniciando em zero.")
+          @RequestParam(defaultValue = "0")
+          @PositiveOrZero
+          int page,
+      @Parameter(description = "Quantidade de elementos por página, entre 1 e 100.")
+          @RequestParam(defaultValue = "20")
+          @Min(1)
+          @Max(100)
+          int size) {
     return PageResponse.from(useCase.list(customerId, page, size), Response::from);
   }
 
   @PostMapping("/customers/{customerId}/pets")
+  @Operation(
+      summary = "Cadastrar pet do cliente",
+      description =
+          "Cria representação interna do pet para o cliente e tenant informados pelo contexto.")
   @PreAuthorize(
       "hasAuthority('PET_WRITE') or hasAnyRole('OWNER','ADMIN','RECEPTIONIST','VETERINARIAN')")
   public ResponseEntity<Response> create(
-      @PathVariable UUID customerId, @Valid @RequestBody Request r) {
+      @Parameter(description = "UUID do cliente dentro do CRM do tenant autenticado.") @PathVariable
+          UUID customerId,
+      @Valid @RequestBody Request r) {
     Response body = Response.from(useCase.create(customerId, r.command()));
     return ResponseEntity.created(URI.create("/api/v1/business/pets/" + body.id())).body(body);
   }
 
   @GetMapping("/pets/{id}")
-  public Response get(@PathVariable UUID id) {
+  @Operation(
+      summary = "Consultar pet do tenant",
+      description = "Retorna dados internos do pet somente no tenant autenticado.")
+  public Response get(
+      @Parameter(description = "UUID do pet interno no tenant autenticado.") @PathVariable
+          UUID id) {
     return Response.from(useCase.get(id));
   }
 
   @PutMapping("/pets/{id}")
+  @Operation(
+      summary = "Atualizar pet do tenant",
+      description = "Atualiza cadastro e observações internas do pet do tenant.")
   @PreAuthorize(
       "hasAuthority('PET_WRITE') or hasAnyRole('OWNER','ADMIN','RECEPTIONIST','VETERINARIAN')")
-  public Response update(@PathVariable UUID id, @Valid @RequestBody Request r) {
+  public Response update(
+      @Parameter(description = "UUID do pet interno no tenant autenticado.") @PathVariable UUID id,
+      @Valid @RequestBody Request r) {
     return Response.from(useCase.update(id, r.command()));
   }
 
   @DeleteMapping("/pets/{id}")
+  @Operation(
+      summary = "Desativar pet do tenant",
+      description = "Realiza exclusão lógica do pet interno.")
   @PreAuthorize("hasAuthority('PET_WRITE') or hasAnyRole('OWNER','ADMIN')")
-  public ResponseEntity<Void> delete(@PathVariable UUID id) {
+  public ResponseEntity<Void> delete(
+      @Parameter(description = "UUID do pet interno no tenant autenticado.") @PathVariable
+          UUID id) {
     useCase.delete(id);
     return ResponseEntity.noContent().build();
   }
 
   public record Request(
-      @NotBlank @Size(max = 120) String name,
-      @NotBlank @Size(max = 60) String species,
-      @Size(max = 120) String breed,
-      @PastOrPresent LocalDate birthDate,
-      @NotNull PetSex sex,
-      @Positive @Digits(integer = 6, fraction = 2) BigDecimal weight,
-      @Size(max = 2000) String notes) {
+      @NotBlank @Size(max = 120) @Schema(description = "Nome do pet.") String name,
+      @NotBlank @Size(max = 60) @Schema(description = "Espécie do pet, por exemplo DOG ou CAT.")
+          String species,
+      @Size(max = 120) @Schema(description = "Raça do pet, quando conhecida.") String breed,
+      @PastOrPresent @Schema(description = "Data de nascimento no formato YYYY-MM-DD.")
+          LocalDate birthDate,
+      @NotNull @Schema(description = "Sexo do pet: MALE, FEMALE ou UNKNOWN.") PetSex sex,
+      @Positive @Digits(integer = 6, fraction = 2) @Schema(description = "Peso positivo do pet.")
+          BigDecimal weight,
+      @Size(max = 2000) @Schema(description = "Observações clínicas internas do tenant.")
+          String notes) {
     TenantPetUseCase.Command command() {
       return new TenantPetUseCase.Command(name, species, breed, birthDate, sex, weight, notes);
     }

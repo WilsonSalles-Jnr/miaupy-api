@@ -26,7 +26,12 @@ public class SecurityContextActorContext implements ActorContext {
       throw new ActorAccessDeniedException("JWT actor_type must be B2B or B2C");
     }
 
-    AuthenticatedActor actor = new AuthenticatedActor(jwt.getSubject(), actorType);
+    String subject = jwt.getSubject();
+    if (subject == null || subject.isBlank()) {
+      throw new ActorAccessDeniedException("JWT sub claim is required");
+    }
+
+    AuthenticatedActor actor = new AuthenticatedActor(subject, actorType);
     MDC.put("actorId", actor.subject());
     return actor;
   }
@@ -41,10 +46,41 @@ public class SecurityContextActorContext implements ActorContext {
   }
 
   @Override
+  public ConsumerIdentity getRequiredVerifiedConsumerIdentity() {
+    String subject = getRequiredConsumerSubject();
+    Jwt jwt = getRequiredJwt();
+    if (!Boolean.TRUE.equals(jwt.getClaimAsBoolean("email_verified"))) {
+      throw new ActorAccessDeniedException("A verified email is required");
+    }
+    String email = jwt.getClaimAsString("email");
+    if (email == null || email.isBlank()) {
+      throw new ActorAccessDeniedException("JWT email claim is required");
+    }
+    String name = jwt.getClaimAsString("name");
+    if (name == null || name.isBlank()) {
+      name = jwt.getClaimAsString("preferred_username");
+    }
+    if (name == null || name.isBlank()) {
+      name = email;
+    }
+    return new ConsumerIdentity(subject, name, email);
+  }
+
+  @Override
   public boolean isEmailVerified() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     return authentication != null
         && authentication.getPrincipal() instanceof Jwt jwt
         && Boolean.TRUE.equals(jwt.getClaimAsBoolean("email_verified"));
+  }
+
+  private Jwt getRequiredJwt() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null
+        || !authentication.isAuthenticated()
+        || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+      throw new ActorAccessDeniedException("Authenticated JWT actor is required");
+    }
+    return jwt;
   }
 }
