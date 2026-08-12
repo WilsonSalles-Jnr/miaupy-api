@@ -11,3 +11,5 @@ databaseChangeLog:
       file: db/changelog/changes/005-onboarding.sql
   - include:
       file: db/changelog/changes/006-sales.sql
+  - include:
+      file: db/changelog/changes/007-notifications.sql

@@ -32,6 +32,19 @@ spring:
         enabled: false
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${NOTIFICATION_KAFKA_GROUP:miaupy-notifications-v1}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${MAIL_SMTP_AUTH:false}
+      mail.smtp.starttls.enable: ${MAIL_STARTTLS:false}
 
 server:
   shutdown: graceful
@@ -70,6 +83,13 @@ miaupy:
     domain-events-topic: ${DOMAIN_EVENTS_TOPIC:miaupy.domain-events}
   outbox:
     publish-delay: ${OUTBOX_PUBLISH_DELAY:PT2S}
+  notification:
+    from: ${NOTIFICATION_FROM:no-reply@miaupy.local}
+    delivery-delay: ${NOTIFICATION_DELIVERY_DELAY:PT5S}
+    max-attempts: ${NOTIFICATION_MAX_ATTEMPTS:5}
+    appointment-reminder-lead: ${APPOINTMENT_REMINDER_LEAD:PT24H}
+    appointment-reminder-window: ${APPOINTMENT_REMINDER_WINDOW:PT5M}
+    reminder-scan-delay: ${APPOINTMENT_REMINDER_SCAN_DELAY:PT5M}
 
 springdoc:
   api-docs:

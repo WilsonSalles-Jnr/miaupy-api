@@ -54,6 +54,9 @@ interface SpringDataAppointmentRepository extends JpaRepository<AppointmentJpaEn
 
   List<AppointmentJpaEntity> findAllByTenantIdAndStatusInAndStartAtLessThanAndEndAtGreaterThan(
       Long tenantId, List<AppointmentStatus> statuses, Instant rangeEnd, Instant rangeStart);
+
+  List<AppointmentJpaEntity> findAllByStatusAndStartAtGreaterThanEqualAndStartAtLessThan(
+      AppointmentStatus status, Instant start, Instant end);
 }
 
 @Repository
@@ -106,6 +109,15 @@ class AppointmentRepositoryAdapter implements AppointmentRepository {
     return repository
         .findAllByTenantIdAndStatusInAndStartAtLessThanAndEndAtGreaterThan(
             tenantId, OCCUPIED, end, start)
+        .stream()
+        .map(this::map)
+        .toList();
+  }
+
+  public List<Appointment> findConfirmedStartingBetween(Instant start, Instant end) {
+    return repository
+        .findAllByStatusAndStartAtGreaterThanEqualAndStartAtLessThan(
+            AppointmentStatus.CONFIRMED, start, end)
         .stream()
         .map(this::map)
         .toList();

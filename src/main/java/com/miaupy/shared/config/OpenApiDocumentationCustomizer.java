@@ -103,11 +103,13 @@ public class OpenApiDocumentationCustomizer {
     if (path.startsWith("/api/v1/consumer/me/appointments")) return "Agendamentos B2C";
     if (path.startsWith("/api/v1/consumer/me/cart")) return "Carrinho B2C";
     if (path.startsWith("/api/v1/consumer/me/orders")) return "Pedidos B2C";
+    if (path.startsWith("/api/v1/consumer/me/notifications")) return "Notificações B2C";
     if (path.startsWith("/api/v1/consumer/me/pets")) return "Pets B2C";
     if (path.equals("/api/v1/consumer/me")) return "Perfil B2C";
     if (path.contains("availability-rules")) return "Disponibilidade";
     if (path.contains("appointments")) return "Agendamentos B2B";
     if (path.contains("orders")) return "Pedidos B2B";
+    if (path.contains("notifications")) return "Notificações B2B";
     if (path.contains("products")) return "Produtos";
     if (path.contains("services")) return "Serviços";
     if (path.contains("customers")) return path.endsWith("/pets") ? "Pets do tenant" : "Clientes";

@@ -26,4 +26,6 @@ public interface AppointmentRepository {
       Long tenantId, String scheduleResource, Instant requestedStart, Instant requestedEnd);
 
   List<Appointment> findOccupiedBetween(Long tenantId, Instant start, Instant end);
+
+  List<Appointment> findConfirmedStartingBetween(Instant start, Instant end);
 }
