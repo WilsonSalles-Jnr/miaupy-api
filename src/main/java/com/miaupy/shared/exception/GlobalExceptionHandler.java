@@ -93,6 +93,16 @@ public class GlobalExceptionHandler {
     return detail;
   }
 
+  @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+  ProblemDetail handleAttachmentTooLarge(
+      org.springframework.web.multipart.MaxUploadSizeExceededException exception) {
+    return problem(
+        HttpStatus.PAYLOAD_TOO_LARGE,
+        "ATTACHMENT_TOO_LARGE",
+        "Attachment too large",
+        "The clinical attachment exceeds the configured upload limit");
+  }
+
   @ExceptionHandler(IllegalArgumentException.class)
   ProblemDetail handleIllegalArgument(IllegalArgumentException exception) {
     return problem(

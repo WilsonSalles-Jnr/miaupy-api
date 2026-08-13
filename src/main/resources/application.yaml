@@ -45,6 +45,10 @@ spring:
     properties:
       mail.smtp.auth: ${MAIL_SMTP_AUTH:false}
       mail.smtp.starttls.enable: ${MAIL_STARTTLS:false}
+  servlet:
+    multipart:
+      max-file-size: ${CLINICAL_ATTACHMENT_MAX_FILE_SIZE:10MB}
+      max-request-size: ${CLINICAL_ATTACHMENT_MAX_REQUEST_SIZE:11MB}
 
 server:
   shutdown: graceful

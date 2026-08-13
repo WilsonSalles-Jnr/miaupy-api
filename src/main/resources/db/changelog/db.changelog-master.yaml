@@ -13,3 +13,5 @@ databaseChangeLog:
       file: db/changelog/changes/006-sales.sql
   - include:
       file: db/changelog/changes/007-notifications.sql
+  - include:
+      file: db/changelog/changes/008-clinical.sql

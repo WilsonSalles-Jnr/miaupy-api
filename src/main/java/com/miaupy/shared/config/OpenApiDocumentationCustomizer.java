@@ -113,6 +113,7 @@ public class OpenApiDocumentationCustomizer {
     if (path.contains("products")) return "Produtos";
     if (path.contains("services")) return "Serviços";
     if (path.contains("customers")) return path.endsWith("/pets") ? "Pets do tenant" : "Clientes";
+    if (path.contains("/clinical")) return "Clínica veterinária";
     if (path.contains("/business/pets")) return "Pets do tenant";
     return "Empresa";
   }
