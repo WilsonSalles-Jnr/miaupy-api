@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -27,7 +28,8 @@ interface SpringDataAppointmentRepository extends JpaRepository<AppointmentJpaEn
       value =
           "SELECT a.* FROM scheduling.appointment a JOIN crm.tenant_customer c "
               + "ON c.id = a.tenant_customer_id AND c.tenant_id = a.tenant_id "
-              + "WHERE c.consumer_profile_id = :profileId",
+              + "WHERE c.consumer_profile_id = :profileId "
+              + "ORDER BY a.created_at DESC",
       countQuery =
           "SELECT count(*) FROM scheduling.appointment a JOIN crm.tenant_customer c "
               + "ON c.id = a.tenant_customer_id AND c.tenant_id = a.tenant_id "
@@ -91,7 +93,10 @@ class AppointmentRepositoryAdapter implements AppointmentRepository {
   }
 
   public Page<Appointment> findAllByConsumerProfileId(UUID consumerProfileId, Pageable pageable) {
-    return repository.findAllForConsumerProfile(consumerProfileId, pageable).map(this::map);
+    // Spring Data appends entity property names verbatim to native queries. Keep the requested
+    // page bounds, but use the explicit physical-column ordering declared in the SQL above.
+    Pageable nativePage = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+    return repository.findAllForConsumerProfile(consumerProfileId, nativePage).map(this::map);
   }
 
   public Optional<Appointment> findByIdAndConsumerProfileId(UUID id, UUID consumerProfileId) {

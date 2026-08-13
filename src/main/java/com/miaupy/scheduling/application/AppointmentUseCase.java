@@ -8,9 +8,7 @@ import com.miaupy.business.domain.BusinessSettings;
 import com.miaupy.consumer.domain.ConsumerProfile;
 import com.miaupy.consumer.domain.ConsumerProfileRepository;
 import com.miaupy.customer.domain.TenantCustomer;
-import com.miaupy.customer.domain.TenantCustomerRepository;
 import com.miaupy.pet.domain.TenantPet;
-import com.miaupy.pet.domain.TenantPetRepository;
 import com.miaupy.scheduling.domain.Appointment;
 import com.miaupy.scheduling.domain.AppointmentConflictException;
 import com.miaupy.scheduling.domain.AppointmentOrigin;
@@ -37,12 +35,11 @@ public class AppointmentUseCase {
   private final BusinessRepository businesses;
   private final BusinessConfigurationRepository configurations;
   private final ConsumerProfileRepository profiles;
-  private final TenantCustomerRepository customers;
-  private final TenantPetRepository pets;
   private final AppointmentRepository appointments;
   private final AppointmentTransaction transaction;
   private final AppointmentLock lock;
   private final AvailabilityUseCase availability;
+  private final ConsumerStoreLinkUseCase storeLinks;
 
   public AppointmentUseCase(
       TenantContext tenantContext,
@@ -50,23 +47,21 @@ public class AppointmentUseCase {
       BusinessRepository businesses,
       BusinessConfigurationRepository configurations,
       ConsumerProfileRepository profiles,
-      TenantCustomerRepository customers,
-      TenantPetRepository pets,
       AppointmentRepository appointments,
       AppointmentTransaction transaction,
       AppointmentLock lock,
-      AvailabilityUseCase availability) {
+      AvailabilityUseCase availability,
+      ConsumerStoreLinkUseCase storeLinks) {
     this.tenantContext = tenantContext;
     this.actorContext = actorContext;
     this.businesses = businesses;
     this.configurations = configurations;
     this.profiles = profiles;
-    this.customers = customers;
-    this.pets = pets;
     this.appointments = appointments;
     this.transaction = transaction;
     this.lock = lock;
     this.availability = availability;
+    this.storeLinks = storeLinks;
   }
 
   public Appointment createBusiness(Command command) {
@@ -90,15 +85,10 @@ public class AppointmentUseCase {
         businesses
             .findPublicBySlug(command.storeSlug().strip().toLowerCase())
             .orElseThrow(() -> new ResourceNotFoundException("Public store not found"));
-    TenantCustomer customer =
-        customers
-            .findByConsumerProfileIdAndTenantId(profile.id(), business.tenantId())
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Consumer is not linked to this store"));
-    TenantPet pet =
-        pets.findByConsumerPetIdAndTenantId(command.consumerPetId(), business.tenantId())
-            .filter(candidate -> candidate.tenantCustomerId().equals(customer.id()))
-            .orElseThrow(() -> new ResourceNotFoundException("Pet is not linked to this store"));
+    ConsumerStoreLinkUseCase.LinkedCustomerPet link =
+        storeLinks.link(profile, command.consumerPetId(), business.tenantId());
+    TenantCustomer customer = link.customer();
+    TenantPet pet = link.pet();
     BusinessSettings settings =
         configurations
             .findSettingsByTenantId(business.tenantId())

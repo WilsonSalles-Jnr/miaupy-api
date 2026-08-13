@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -38,6 +40,83 @@ class AppointmentConcurrencyIntegrationTest {
   }
 
   @Autowired JdbcTemplate jdbc;
+  @Autowired SpringDataAppointmentRepository springDataAppointments;
+
+  @Test
+  void listsConsumerAppointmentsUsingPhysicalCreatedAtColumn() {
+    long tenant = 502L;
+    UUID business = UUID.randomUUID();
+    UUID profile = UUID.randomUUID();
+    UUID customer = UUID.randomUUID();
+    UUID pet = UUID.randomUUID();
+    UUID service = UUID.randomUUID();
+    UUID appointment = UUID.randomUUID();
+    Instant now = Instant.now();
+
+    jdbc.update(
+        "INSERT INTO platform.business(id,tenant_id,slug,name,active,public_visible,created_at,updated_at,version) VALUES (?,?,?,?,true,false,?,?,0)",
+        business,
+        tenant,
+        "consumer-appointments-store",
+        "Store",
+        Timestamp.from(now),
+        Timestamp.from(now));
+    jdbc.update(
+        "INSERT INTO consumer.consumer_profile(id,auth_subject,name,email,active,created_at,updated_at,version) VALUES (?,?,?,?,true,?,?,0)",
+        profile,
+        "consumer-appointments-subject",
+        "Consumer",
+        "consumer-appointments@example.com",
+        Timestamp.from(now),
+        Timestamp.from(now));
+    jdbc.update(
+        "INSERT INTO crm.tenant_customer(id,tenant_id,consumer_profile_id,name,active,created_at,updated_at,version) VALUES (?,?,?,?,true,?,?,0)",
+        customer,
+        tenant,
+        profile,
+        "Consumer",
+        Timestamp.from(now),
+        Timestamp.from(now));
+    jdbc.update(
+        "INSERT INTO pet.tenant_pet(id,tenant_id,tenant_customer_id,name,species,active,created_at,updated_at,version) VALUES (?,?,?,?,?,true,?,?,0)",
+        pet,
+        tenant,
+        customer,
+        "Pet",
+        "DOG",
+        Timestamp.from(now),
+        Timestamp.from(now));
+    jdbc.update(
+        "INSERT INTO catalog.service(id,tenant_id,name,duration_minutes,price,active,published,requires_approval,created_at,updated_at,version) VALUES (?,?,?,30,?,true,true,true,?,?,0)",
+        service,
+        tenant,
+        "Consultation",
+        new BigDecimal("100.00"),
+        Timestamp.from(now),
+        Timestamp.from(now));
+    jdbc.update(
+        "INSERT INTO scheduling.appointment(id,tenant_id,tenant_customer_id,tenant_pet_id,service_id,schedule_resource,requested_by,start_at,end_at,status,created_at,updated_at,version) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,0)",
+        appointment,
+        tenant,
+        customer,
+        pet,
+        service,
+        "service:" + service,
+        "CUSTOMER",
+        Timestamp.from(now.plusSeconds(3600)),
+        Timestamp.from(now.plusSeconds(5400)),
+        "REQUESTED",
+        Timestamp.from(now),
+        Timestamp.from(now));
+
+    var repository = new AppointmentRepositoryAdapter(springDataAppointments);
+    var page =
+        repository.findAllByConsumerProfileId(
+            profile,
+            PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt")));
+
+    assertThat(page.getContent()).extracting(item -> item.id()).containsExactly(appointment);
+  }
 
   @Test
   void postgresAllowsOnlyOneConcurrentAppointmentForOverlappingResource() throws Exception {

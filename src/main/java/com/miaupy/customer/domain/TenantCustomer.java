@@ -36,6 +36,13 @@ public record TenantCustomer(
         null);
   }
 
+  public static TenantCustomer linkConsumer(Long tenantId, UUID consumerProfileId, String name,
+      String email, String phone, String document) {
+    Instant now = Instant.now();
+    return new TenantCustomer(UUID.randomUUID(), tenantId, consumerProfileId, name, email, phone,
+        document, null, true, null, now, now, null);
+  }
+
   public TenantCustomer update(
       String name, String email, String phone, String document, String notes) {
     return new TenantCustomer(

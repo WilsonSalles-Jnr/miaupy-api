@@ -9,6 +9,7 @@ import com.miaupy.clinical.domain.Prescription;
 import com.miaupy.clinical.domain.Vaccination;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -53,8 +54,8 @@ class JdbcClinicalRepository implements ClinicalRepository {
           record.notes(),
           record.createdBy(),
           record.updatedBy(),
-          record.createdAt(),
-          record.updatedAt());
+          timestamp(record.createdAt()),
+          timestamp(record.updatedAt()));
     } else {
       int changed =
           jdbc.update(
@@ -64,7 +65,7 @@ class JdbcClinicalRepository implements ClinicalRepository {
               record.currentMedications(),
               record.notes(),
               record.updatedBy(),
-              record.updatedAt(),
+              timestamp(record.updatedAt()),
               record.id(),
               record.tenantId(),
               record.version());
@@ -80,7 +81,7 @@ class JdbcClinicalRepository implements ClinicalRepository {
         value.tenantId(),
         value.tenantPetId(),
         value.appointmentId(),
-        value.occurredAt(),
+        timestamp(value.occurredAt()),
         value.reason(),
         value.anamnesis(),
         value.clinicalFindings(),
@@ -89,7 +90,7 @@ class JdbcClinicalRepository implements ClinicalRepository {
         value.weight(),
         value.temperature(),
         value.veterinarianSubject(),
-        value.createdAt());
+        timestamp(value.createdAt()));
     return value;
   }
 
@@ -118,7 +119,7 @@ class JdbcClinicalRepository implements ClinicalRepository {
         value.nextDueOn(),
         value.veterinarianSubject(),
         value.notes(),
-        value.createdAt());
+        timestamp(value.createdAt()));
     return value;
   }
 
@@ -134,10 +135,10 @@ class JdbcClinicalRepository implements ClinicalRepository {
         value.frequency(),
         value.duration(),
         value.instructions(),
-        value.issuedAt(),
+        timestamp(value.issuedAt()),
         value.validUntil(),
         value.veterinarianSubject(),
-        value.createdAt());
+        timestamp(value.createdAt()));
     return value;
   }
 
@@ -154,7 +155,7 @@ class JdbcClinicalRepository implements ClinicalRepository {
         value.sha256(),
         value.content(),
         value.uploadedBy(),
-        value.createdAt());
+        timestamp(value.createdAt()));
     return value;
   }
 
@@ -197,9 +198,9 @@ class JdbcClinicalRepository implements ClinicalRepository {
         value.eventType(),
         value.resourceId(),
         value.summary(),
-        value.occurredAt(),
+        timestamp(value.occurredAt()),
         value.recordedBy(),
-        value.createdAt());
+        timestamp(value.createdAt()));
   }
 
   private RowMapper<MedicalRecord> medicalRecordMapper() {
@@ -287,5 +288,9 @@ class JdbcClinicalRepository implements ClinicalRepository {
   private Instant instantNullable(ResultSet rs, String column) throws SQLException {
     var value = rs.getTimestamp(column);
     return value == null ? null : value.toInstant();
+  }
+
+  private Timestamp timestamp(Instant value) {
+    return value == null ? null : Timestamp.from(value);
   }
 }
