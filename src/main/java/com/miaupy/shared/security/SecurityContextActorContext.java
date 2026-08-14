@@ -38,11 +38,7 @@ public class SecurityContextActorContext implements ActorContext {
 
   @Override
   public String getRequiredConsumerSubject() {
-    AuthenticatedActor actor = getRequiredActor();
-    if (actor.type() != ActorType.B2C) {
-      throw new ActorAccessDeniedException("A B2C actor is required");
-    }
-    return actor.subject();
+    return getRequiredActor().subject();
   }
 
   @Override

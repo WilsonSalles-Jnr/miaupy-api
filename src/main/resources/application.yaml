@@ -21,7 +21,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${AUTH_ISSUER_URI:http://localhost:9000/realms/miaupy}
+          issuer-uri: ${AUTH_ISSUER_URI:http://localhost:3000/identity/realms/miaupy}
           jwk-set-uri: ${AUTH_JWK_SET_URI:http://localhost:9000/realms/miaupy/protocol/openid-connect/certs}
           audiences: ${AUTH_AUDIENCE:miaupy-api}
   data:
@@ -77,6 +77,7 @@ miaupy:
     client-secret: ${IDENTITY_CLIENT_SECRET:local-onboarding-secret-change-me}
     consumer-client-id: ${IDENTITY_CONSUMER_CLIENT_ID:miaupy-consumer}
     business-client-id: ${IDENTITY_BUSINESS_CLIENT_ID:miaupy-business}
+    frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
   onboarding:
     registration:
       ip-limit-per-hour: ${REGISTRATION_IP_LIMIT_PER_HOUR:10}

@@ -38,7 +38,8 @@ public class OpenApiConfig {
                         .bearerFormat("JWT")
                         .description(
                             "Access token emitido pelo serviço externo de autenticação. "
-                                + "B2B requer actor_type=B2B e tenant_id; B2C requer actor_type=B2C.")))
+                                + "Rotas B2B requerem actor_type=B2B e tenant_id. Rotas /consumer/me "
+                                + "aceitam B2C ou B2B e sempre usam o sub autenticado.")))
         .tags(
             List.of(
                 tag("Empresa", "Perfil, endereço e configurações da empresa autenticada."),

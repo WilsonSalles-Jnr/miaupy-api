@@ -5,8 +5,8 @@ import com.miaupy.business.domain.Business;
 import com.miaupy.business.domain.BusinessConfigurationRepository;
 import com.miaupy.business.domain.BusinessRepository;
 import com.miaupy.business.domain.BusinessSettings;
+import com.miaupy.consumer.application.ConsumerProfileUseCase;
 import com.miaupy.consumer.domain.ConsumerProfile;
-import com.miaupy.consumer.domain.ConsumerProfileRepository;
 import com.miaupy.customer.domain.TenantCustomer;
 import com.miaupy.pet.domain.TenantPet;
 import com.miaupy.scheduling.domain.Appointment;
@@ -15,7 +15,6 @@ import com.miaupy.scheduling.domain.AppointmentOrigin;
 import com.miaupy.scheduling.domain.AppointmentRepository;
 import com.miaupy.scheduling.domain.AppointmentStatus;
 import com.miaupy.shared.exception.ResourceNotFoundException;
-import com.miaupy.shared.security.ActorContext;
 import com.miaupy.shared.tenant.TenantContext;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -31,10 +30,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AppointmentUseCase {
   private final TenantContext tenantContext;
-  private final ActorContext actorContext;
   private final BusinessRepository businesses;
   private final BusinessConfigurationRepository configurations;
-  private final ConsumerProfileRepository profiles;
+  private final ConsumerProfileUseCase profiles;
   private final AppointmentRepository appointments;
   private final AppointmentTransaction transaction;
   private final AppointmentLock lock;
@@ -43,17 +41,15 @@ public class AppointmentUseCase {
 
   public AppointmentUseCase(
       TenantContext tenantContext,
-      ActorContext actorContext,
       BusinessRepository businesses,
       BusinessConfigurationRepository configurations,
-      ConsumerProfileRepository profiles,
+      ConsumerProfileUseCase profiles,
       AppointmentRepository appointments,
       AppointmentTransaction transaction,
       AppointmentLock lock,
       AvailabilityUseCase availability,
       ConsumerStoreLinkUseCase storeLinks) {
     this.tenantContext = tenantContext;
-    this.actorContext = actorContext;
     this.businesses = businesses;
     this.configurations = configurations;
     this.profiles = profiles;
@@ -157,10 +153,7 @@ public class AppointmentUseCase {
   }
 
   private ConsumerProfile consumerProfile() {
-    String subject = actorContext.getRequiredConsumerSubject();
-    return profiles
-        .findByAuthSubject(subject)
-        .orElseThrow(() -> new ResourceNotFoundException("Consumer profile not found"));
+    return profiles.getMe();
   }
 
   private PageRequest page(int page, int size) {

@@ -25,6 +25,7 @@ class KeycloakIdentityProvider implements IdentityProvider {
   private final String clientSecret;
   private final String consumerClientId;
   private final String businessClientId;
+  private final String frontendBaseUrl;
 
   KeycloakIdentityProvider(
       RestClient.Builder builder,
@@ -33,13 +34,15 @@ class KeycloakIdentityProvider implements IdentityProvider {
       @Value("${miaupy.identity.client-id}") String clientId,
       @Value("${miaupy.identity.client-secret}") String clientSecret,
       @Value("${miaupy.identity.consumer-client-id}") String consumerClientId,
-      @Value("${miaupy.identity.business-client-id:miaupy-business}") String businessClientId) {
+      @Value("${miaupy.identity.business-client-id:miaupy-business}") String businessClientId,
+      @Value("${miaupy.identity.frontend-base-url:http://localhost:3000}") String frontendBaseUrl) {
     this.restClient = builder.baseUrl(baseUrl).build();
     this.realm = realm;
     this.clientId = clientId;
     this.clientSecret = clientSecret;
     this.consumerClientId = consumerClientId;
     this.businessClientId = businessClientId;
+    this.frontendBaseUrl = frontendBaseUrl.replaceAll("/+$", "");
   }
 
   @Override
@@ -66,29 +69,28 @@ class KeycloakIdentityProvider implements IdentityProvider {
 
   private RegistrationResult registerUser(String name, String email, String password) {
     String token = adminToken();
+    NameParts nameParts = NameParts.from(name);
     try {
+      Map<String, Object> userRepresentation = new LinkedHashMap<>();
+      userRepresentation.put("username", email);
+      userRepresentation.put("email", email);
+      userRepresentation.put("firstName", nameParts.firstName());
+      if (nameParts.lastName() != null) {
+        userRepresentation.put("lastName", nameParts.lastName());
+      }
+      userRepresentation.put("enabled", true);
+      userRepresentation.put("emailVerified", false);
+      userRepresentation.put("requiredActions", List.of("VERIFY_EMAIL"));
+      userRepresentation.put(
+          "credentials",
+          List.of(Map.of("type", "password", "value", password, "temporary", false)));
       ResponseEntity<Void> response =
           restClient
               .post()
               .uri("/admin/realms/{realm}/users", realm)
               .header(HttpHeaders.AUTHORIZATION, bearer(token))
               .contentType(MediaType.APPLICATION_JSON)
-              .body(
-                  Map.of(
-                      "username",
-                      email,
-                      "email",
-                      email,
-                      "firstName",
-                      name,
-                      "enabled",
-                      true,
-                      "emailVerified",
-                      false,
-                      "requiredActions",
-                      List.of("VERIFY_EMAIL"),
-                      "credentials",
-                      List.of(Map.of("type", "password", "value", password, "temporary", false))))
+              .body(userRepresentation)
               .retrieve()
               .toBodilessEntity();
       String userId = userId(response.getHeaders().getLocation());
@@ -187,6 +189,8 @@ class KeycloakIdentityProvider implements IdentityProvider {
   }
 
   private void sendVerificationEmail(String token, String userId, String verificationClientId) {
+    String actor = verificationClientId.equals(businessClientId) ? "business" : "consumer";
+    String redirectUri = frontendBaseUrl + "/api/auth/login?actor=" + actor;
     restClient
         .put()
         .uri(
@@ -194,6 +198,7 @@ class KeycloakIdentityProvider implements IdentityProvider {
                 uriBuilder
                     .path("/admin/realms/{realm}/users/{id}/execute-actions-email")
                     .queryParam("client_id", verificationClientId)
+                    .queryParam("redirect_uri", redirectUri)
                     .build(realm, userId))
         .header(HttpHeaders.AUTHORIZATION, bearer(token))
         .contentType(MediaType.APPLICATION_JSON)
@@ -230,4 +235,14 @@ class KeycloakIdentityProvider implements IdentityProvider {
 
   private record TokenResponse(
       @com.fasterxml.jackson.annotation.JsonProperty("access_token") String accessToken) {}
+
+  private record NameParts(String firstName, String lastName) {
+    private static NameParts from(String fullName) {
+      String normalized = fullName.strip().replaceAll("\\s+", " ");
+      int separator = normalized.indexOf(' ');
+      return separator < 0
+          ? new NameParts(normalized, null)
+          : new NameParts(normalized.substring(0, separator), normalized.substring(separator + 1));
+    }
+  }
 }

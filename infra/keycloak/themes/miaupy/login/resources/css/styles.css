@@ -1,0 +1,112 @@
+:root {
+  --miaupy-cream: #fbf8f2;
+  --miaupy-ink: #16322d;
+  --miaupy-teal: #19675b;
+  --miaupy-teal-dark: #0c4c43;
+}
+
+body,
+.login-pf body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 86% 16%, rgba(242, 108, 75, 0.15), transparent 28%),
+    radial-gradient(circle at 10% 88%, rgba(59, 168, 143, 0.13), transparent 30%),
+    var(--miaupy-cream);
+  color: var(--miaupy-ink);
+  font-family: "Segoe UI", Inter, Arial, sans-serif;
+}
+
+#kc-header {
+  color: var(--miaupy-teal-dark);
+}
+
+#kc-header-wrapper {
+  padding: 2rem 1rem 1rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  text-transform: none;
+}
+
+.pf-v5-c-login__main,
+.card-pf {
+  overflow: hidden;
+  border: 1px solid rgba(25, 103, 91, 0.12);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 60px rgba(12, 76, 67, 0.14);
+}
+
+.pf-v5-c-login__main-header,
+.pf-v5-c-login__main-body,
+.card-pf {
+  padding: 2rem;
+}
+
+h1,
+#kc-page-title {
+  color: var(--miaupy-ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+label,
+.pf-v5-c-form__label-text {
+  color: var(--miaupy-ink);
+  font-weight: 700;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  min-height: 44px;
+  border-color: #d7dfda;
+  border-radius: 10px;
+}
+
+input:focus {
+  border-color: var(--miaupy-teal);
+  box-shadow: 0 0 0 3px rgba(25, 103, 91, 0.14);
+}
+
+#kc-login,
+.pf-v5-c-button.pf-m-primary {
+  min-height: 46px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--miaupy-teal);
+  font-weight: 700;
+}
+
+#kc-login:hover,
+.pf-v5-c-button.pf-m-primary:hover {
+  background: var(--miaupy-teal-dark);
+}
+
+a {
+  color: var(--miaupy-teal);
+}
+
+a:hover {
+  color: var(--miaupy-teal-dark);
+}
+
+.pf-v5-c-alert.pf-m-danger,
+.alert-error {
+  border-radius: 12px;
+}
+
+@media (max-width: 767px) {
+  #kc-header-wrapper {
+    padding-top: 1.25rem;
+    font-size: 2rem;
+  }
+
+  .pf-v5-c-login__main-header,
+  .pf-v5-c-login__main-body,
+  .card-pf {
+    padding: 1.35rem;
+  }
+}

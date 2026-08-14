@@ -66,6 +66,10 @@ services:
       KC_DB_USERNAME: miaupy
       KC_DB_PASSWORD: miaupy
       KC_HEALTH_ENABLED: "true"
+      KC_HOSTNAME: ${IDENTITY_PUBLIC_URL:-http://localhost:3000/identity}
+      KC_HOSTNAME_ADMIN: ${IDENTITY_ADMIN_URL:-http://localhost:9000}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_PROXY_HEADERS: xforwarded
       MIAUPY_ONBOARDING_CLIENT_SECRET: ${IDENTITY_CLIENT_SECRET:-local-onboarding-secret-change-me}
     ports:
       - "9000:8080"
@@ -73,6 +77,7 @@ services:
       # --import-realm processes every JSON in this directory. Mount only the realm export;
       # miaupy-user-profile.json is applied separately by the keycloak-config service below.
       - ./infra/keycloak/miaupy-realm.json:/opt/keycloak/data/import/miaupy-realm.json:ro
+      - ./infra/keycloak/themes/miaupy:/opt/keycloak/themes/miaupy:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -86,6 +91,7 @@ services:
       - |
         until /opt/keycloak/bin/kcadm.sh config credentials --server http://keycloak:8080 --realm master --user "$${KEYCLOAK_ADMIN_USERNAME}" --password "$${KEYCLOAK_ADMIN_PASSWORD}"; do sleep 2; done
         /opt/keycloak/bin/kcadm.sh update users/profile -r miaupy -f /config/miaupy-user-profile.json
+        /opt/keycloak/bin/kcadm.sh update realms/miaupy -s loginTheme=miaupy -s internationalizationEnabled=true -s defaultLocale=pt-BR
     environment:
       KEYCLOAK_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-local-admin-change-me}
