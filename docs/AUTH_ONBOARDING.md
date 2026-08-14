@@ -1,4 +1,4 @@
-# Cadastro B2C e upgrade para fornecedor
+# Cadastro B2C e cadastro empresarial direto
 
 ## Decisão arquitetural
 
@@ -53,32 +53,37 @@ não contêm IP/e-mail em texto. A API usa o endereço remoto da conexão e não
 `X-Forwarded-For`. Em produção, configure os proxies confiáveis e proteção anti-bot adaptativa na
 borda.
 
-## Upgrade para fornecedor
+## Cadastro da empresa
 
-Exige JWT do client `miaupy-consumer`, `actor_type=B2C`, `email_verified=true`, perfil existente e um
-`Idempotency-Key` UUID.
+O cadastro empresarial é independente do consumidor. Não exige conta B2C, JWT ou
+`ConsumerProfile`. O responsável informa sua credencial e os dados iniciais do negócio em uma única
+solicitação pública com `Idempotency-Key` UUID.
 
 ```http
-POST /api/v1/consumer/me/provider-upgrades
-Authorization: Bearer <token-b2c>
+POST /api/v1/auth/businesses/registrations
 Idempotency-Key: 7d54213a-d336-4d70-bc8e-7be947060af7
 Content-Type: application/json
 
 {
+  "ownerName": "Jane Doe",
+  "email": "owner@example.com",
+  "password": "uma frase secreta longa",
+  "termsAccepted": true,
   "slug": "pet-store-centro",
   "name": "Pet Store Centro",
-  "email": "owner@example.com"
+  "businessEmail": "contato@petstore.example"
 }
 ```
 
-O servidor aloca o tenant; `tenantId` nunca vem do request. Um lock PostgreSQL por `sub` serializa
-concorrência. Tenant, empresa, configurações e workflow são persistidos numa transação. Depois, a
-identidade recebe `tenant_id` e `OWNER`. Se o Keycloak falhar, `LOCAL_READY` permanece e repetir a
-mesma chave e corpo retoma o fluxo. Chave/corpo incompatíveis retornam `409`.
+O servidor aloca o tenant; `tenantId` nunca vem do request. Tenant, empresa, configurações e workflow
+são persistidos numa transação. Depois, a identidade recebe `tenant_id` e `OWNER`, e a verificação é
+enviada usando o client `miaupy-business`. Se o Keycloak falhar após a persistência local,
+`LOCAL_READY` permanece e repetir a mesma chave e corpo retoma o fluxo. Chave/corpo incompatíveis
+retornam `409`.
 
-Concluído o fluxo, o usuário autentica no client `miaupy-business` e recebe token com
-`actor_type=B2B`, `tenant_id` e `OWNER`. Ele continua usando o client B2C nas operações pessoais; o
-perfil global e a empresa continuam entidades separadas.
+O endpoint sempre responde com mensagem genérica para não revelar se o e-mail já existe. Concluído
+o fluxo e verificado o e-mail, o proprietário autentica no client `miaupy-business` e recebe token
+com `actor_type=B2B`, `tenant_id` e `OWNER`.
 
 ## Checklist de produção
 
@@ -96,6 +101,6 @@ perfil global e a empresa continuam entidades separadas.
 
 ## Dados operacionais
 
-- migration: `005-onboarding.sql`;
-- evento outbox: `provider.upgraded` no tópico de domínio existente;
+- migrations: `005-onboarding.sql` e `010-direct-business-registration.sql`;
+- evento outbox: `business.registered` no tópico de domínio existente;
 - Redis: `onboarding:registration:ip:{hmac}` e `onboarding:registration:email:{hmac}`, TTL de 1 hora.

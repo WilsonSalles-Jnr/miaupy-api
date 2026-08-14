@@ -97,7 +97,6 @@ public class OpenApiDocumentationCustomizer {
 
   private String tag(String path) {
     if (path.startsWith("/api/v1/auth/")) return "Cadastro e identidade";
-    if (path.contains("provider-upgrades")) return "Upgrade para fornecedor";
     if (path.startsWith("/api/v1/public/"))
       return path.endsWith("/availability") ? "Disponibilidade" : "Vitrine pública";
     if (path.startsWith("/api/v1/consumer/me/appointments")) return "Agendamentos B2C";
@@ -120,6 +119,7 @@ public class OpenApiDocumentationCustomizer {
 
   private static boolean isPublic(String path) {
     return path.startsWith("/api/v1/public/")
-        || path.equals("/api/v1/auth/consumers/registrations");
+        || path.equals("/api/v1/auth/consumers/registrations")
+        || path.equals("/api/v1/auth/businesses/registrations");
   }
 }

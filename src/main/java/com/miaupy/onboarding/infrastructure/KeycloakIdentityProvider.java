@@ -24,6 +24,7 @@ class KeycloakIdentityProvider implements IdentityProvider {
   private final String clientId;
   private final String clientSecret;
   private final String consumerClientId;
+  private final String businessClientId;
 
   KeycloakIdentityProvider(
       RestClient.Builder builder,
@@ -31,16 +32,39 @@ class KeycloakIdentityProvider implements IdentityProvider {
       @Value("${miaupy.identity.realm}") String realm,
       @Value("${miaupy.identity.client-id}") String clientId,
       @Value("${miaupy.identity.client-secret}") String clientSecret,
-      @Value("${miaupy.identity.consumer-client-id}") String consumerClientId) {
+      @Value("${miaupy.identity.consumer-client-id}") String consumerClientId,
+      @Value("${miaupy.identity.business-client-id:miaupy-business}") String businessClientId) {
     this.restClient = builder.baseUrl(baseUrl).build();
     this.realm = realm;
     this.clientId = clientId;
     this.clientSecret = clientSecret;
     this.consumerClientId = consumerClientId;
+    this.businessClientId = businessClientId;
   }
 
   @Override
   public RegistrationResult registerConsumer(String name, String email, String password) {
+    RegistrationResult result = registerUser(name, email, password);
+    result
+        .createdSubject()
+        .ifPresent(
+            subject -> {
+              try {
+                sendVerificationEmail(adminToken(), subject, consumerClientId);
+              } catch (RuntimeException exception) {
+                deleteUnverifiedUser(subject);
+                throw exception;
+              }
+            });
+    return result;
+  }
+
+  @Override
+  public RegistrationResult registerBusiness(String ownerName, String email, String password) {
+    return registerUser(ownerName, email, password);
+  }
+
+  private RegistrationResult registerUser(String name, String email, String password) {
     String token = adminToken();
     try {
       ResponseEntity<Void> response =
@@ -68,19 +92,23 @@ class KeycloakIdentityProvider implements IdentityProvider {
               .retrieve()
               .toBodilessEntity();
       String userId = userId(response.getHeaders().getLocation());
-      try {
-        sendVerificationEmail(token, userId);
-      } catch (RuntimeException exception) {
-        deleteUnverifiedUser(token, userId);
-        throw exception;
-      }
-      return new RegistrationResult(true);
+      return new RegistrationResult(true, userId);
     } catch (HttpClientErrorException.Conflict exception) {
-      return new RegistrationResult(false);
+      return new RegistrationResult(false, null);
     } catch (RestClientException exception) {
       throw new IdentityProviderUnavailableException(
           "Identity provider did not accept the registration", exception);
     }
+  }
+
+  @Override
+  public void sendBusinessVerification(String authSubject) {
+    sendVerificationEmail(adminToken(), authSubject, businessClientId);
+  }
+
+  @Override
+  public void deleteUnverifiedUser(String authSubject) {
+    deleteUnverifiedUser(adminToken(), authSubject);
   }
 
   @Override
@@ -158,14 +186,14 @@ class KeycloakIdentityProvider implements IdentityProvider {
     }
   }
 
-  private void sendVerificationEmail(String token, String userId) {
+  private void sendVerificationEmail(String token, String userId, String verificationClientId) {
     restClient
         .put()
         .uri(
             uriBuilder ->
                 uriBuilder
                     .path("/admin/realms/{realm}/users/{id}/execute-actions-email")
-                    .queryParam("client_id", consumerClientId)
+                    .queryParam("client_id", verificationClientId)
                     .build(realm, userId))
         .header(HttpHeaders.AUTHORIZATION, bearer(token))
         .contentType(MediaType.APPLICATION_JSON)

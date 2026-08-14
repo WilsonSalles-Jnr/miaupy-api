@@ -1,6 +1,6 @@
 package com.miaupy.onboarding.application;
 
-public record ProviderUpgradeCommand(
+public record BusinessRegistrationCommand(
     String slug,
     String name,
     String tradeName,

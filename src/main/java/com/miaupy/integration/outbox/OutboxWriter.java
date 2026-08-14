@@ -29,6 +29,34 @@ public class OutboxWriter {
       Long tenantId,
       Map<String, ?> payload) {
     var actor = actorContext.getRequiredActor();
+    save(
+        aggregateType,
+        aggregateId,
+        eventType,
+        tenantId,
+        actor.type().name(),
+        actor.subject(),
+        payload);
+  }
+
+  public void appendSystem(
+      String aggregateType,
+      UUID aggregateId,
+      String eventType,
+      Long tenantId,
+      String actorId,
+      Map<String, ?> payload) {
+    save(aggregateType, aggregateId, eventType, tenantId, "SYSTEM", actorId, payload);
+  }
+
+  private void save(
+      String aggregateType,
+      UUID aggregateId,
+      String eventType,
+      Long tenantId,
+      String actorType,
+      String actorId,
+      Map<String, ?> payload) {
     try {
       repository.save(
           new OutboxEvent(
@@ -39,8 +67,8 @@ public class OutboxWriter {
               1,
               Instant.now(),
               tenantId,
-              actor.type().name(),
-              actor.subject(),
+              actorType,
+              actorId,
               objectMapper.writeValueAsString(payload)));
     } catch (JsonProcessingException exception) {
       throw new IllegalStateException("Unable to serialize domain event payload", exception);

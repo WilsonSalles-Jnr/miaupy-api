@@ -70,7 +70,9 @@ services:
     ports:
       - "9000:8080"
     volumes:
-      - ./infra/keycloak:/opt/keycloak/data/import:ro
+      # --import-realm processes every JSON in this directory. Mount only the realm export;
+      # miaupy-user-profile.json is applied separately by the keycloak-config service below.
+      - ./infra/keycloak/miaupy-realm.json:/opt/keycloak/data/import/miaupy-realm.json:ro
     depends_on:
       postgres:
         condition: service_healthy

@@ -76,6 +76,7 @@ miaupy:
     client-id: ${IDENTITY_CLIENT_ID:miaupy-onboarding-service}
     client-secret: ${IDENTITY_CLIENT_SECRET:local-onboarding-secret-change-me}
     consumer-client-id: ${IDENTITY_CONSUMER_CLIENT_ID:miaupy-consumer}
+    business-client-id: ${IDENTITY_BUSINESS_CLIENT_ID:miaupy-business}
   onboarding:
     registration:
       ip-limit-per-hour: ${REGISTRATION_IP_LIMIT_PER_HOUR:10}
