@@ -101,6 +101,22 @@ restrito ao tenant do token.
 
 Após a verificação, o link retorna ao login empresarial e o callback redireciona para `/empresa`.
 
+## Cadastro de funcionários com acesso
+
+Proprietários e administradores podem cadastrar um funcionário diretamente em
+`POST /api/v1/business/employees`. O e-mail informado é utilizado como login empresarial e a senha
+é enviada somente ao Keycloak, marcada como temporária. A API não persiste nem devolve a senha. No
+primeiro acesso pelo client `miaupy-business`, o Keycloak exige a definição de uma nova senha.
+
+O funcionário recebe o `tenant_id` da empresa autenticada e apenas uma função operacional permitida:
+`RECEPTIONIST`, `VETERINARIAN`, `GROOMER`, `CATALOG_MANAGER`, `SCHEDULING_MANAGER` ou
+`ORDER_MANAGER`. O fluxo não permite conceder `OWNER`. Ao desativar o funcionário, o cadastro local
+é preservado e a identidade é bloqueada no Keycloak.
+
+O serviço `keycloak-config` garante idempotentemente que os papéis operacionais existam mesmo em um
+realm local já persistido. Depois de atualizar o projeto, execute novamente `docker compose up -d`
+para que essa configuração seja aplicada.
+
 ## Checklist de produção
 
 - HTTPS obrigatório para Keycloak e API;
@@ -119,6 +135,6 @@ Após a verificação, o link retorna ao login empresarial e o callback redireci
 
 ## Dados operacionais
 
-- migrations: `005-onboarding.sql` e `010-direct-business-registration.sql`;
-- evento outbox: `business.registered` no tópico de domínio existente;
+- migrations: `005-onboarding.sql`, `010-direct-business-registration.sql` e `011-employees.sql`;
+- eventos outbox: `business.registered`, `employee.created` e `employee.deactivated` no tópico de domínio existente;
 - Redis: `onboarding:registration:ip:{hmac}` e `onboarding:registration:email:{hmac}`, TTL de 1 hora.

@@ -1,5 +1,6 @@
 package com.miaupy.onboarding.infrastructure;
 
+import com.miaupy.employee.domain.EmployeeRole;
 import com.miaupy.onboarding.domain.IdentityProvider;
 import com.miaupy.onboarding.domain.IdentityProviderUnavailableException;
 import java.net.URI;
@@ -47,7 +48,8 @@ class KeycloakIdentityProvider implements IdentityProvider {
 
   @Override
   public RegistrationResult registerConsumer(String name, String email, String password) {
-    RegistrationResult result = registerUser(name, email, password);
+    RegistrationResult result =
+        registerUser(name, email, password, false, false, List.of("VERIFY_EMAIL"));
     result
         .createdSubject()
         .ifPresent(
@@ -64,10 +66,35 @@ class KeycloakIdentityProvider implements IdentityProvider {
 
   @Override
   public RegistrationResult registerBusiness(String ownerName, String email, String password) {
-    return registerUser(ownerName, email, password);
+    return registerUser(ownerName, email, password, false, false, List.of("VERIFY_EMAIL"));
   }
 
-  private RegistrationResult registerUser(String name, String email, String password) {
+  @Override
+  public RegistrationResult registerEmployee(
+      String name, String email, String temporaryPassword, Long tenantId, EmployeeRole role) {
+    RegistrationResult result =
+        registerUser(name, email, temporaryPassword, true, true, List.of("UPDATE_PASSWORD"));
+    result
+        .createdSubject()
+        .ifPresent(
+            subject -> {
+              try {
+                grantBusinessRoleAccess(subject, tenantId, role.name());
+              } catch (RuntimeException exception) {
+                deleteUnverifiedUser(subject);
+                throw exception;
+              }
+            });
+    return result;
+  }
+
+  private RegistrationResult registerUser(
+      String name,
+      String email,
+      String password,
+      boolean emailVerified,
+      boolean temporaryPassword,
+      List<String> requiredActions) {
     String token = adminToken();
     NameParts nameParts = NameParts.from(name);
     try {
@@ -79,11 +106,11 @@ class KeycloakIdentityProvider implements IdentityProvider {
         userRepresentation.put("lastName", nameParts.lastName());
       }
       userRepresentation.put("enabled", true);
-      userRepresentation.put("emailVerified", false);
-      userRepresentation.put("requiredActions", List.of("VERIFY_EMAIL"));
+      userRepresentation.put("emailVerified", emailVerified);
+      userRepresentation.put("requiredActions", requiredActions);
       userRepresentation.put(
           "credentials",
-          List.of(Map.of("type", "password", "value", password, "temporary", false)));
+          List.of(Map.of("type", "password", "value", password, "temporary", temporaryPassword)));
       ResponseEntity<Void> response =
           restClient
               .post()
@@ -116,6 +143,42 @@ class KeycloakIdentityProvider implements IdentityProvider {
   @Override
   @SuppressWarnings("unchecked")
   public void grantBusinessAccess(String authSubject, Long tenantId) {
+    grantBusinessRoleAccess(authSubject, tenantId, "OWNER");
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public void setUserEnabled(String authSubject, boolean enabled) {
+    String token = adminToken();
+    try {
+      Map<String, Object> user =
+          restClient
+              .get()
+              .uri("/admin/realms/{realm}/users/{id}", realm, authSubject)
+              .header(HttpHeaders.AUTHORIZATION, bearer(token))
+              .retrieve()
+              .body(Map.class);
+      if (user == null) {
+        throw new IdentityProviderUnavailableException("Identity user was not found");
+      }
+      Map<String, Object> updated = new LinkedHashMap<>(user);
+      updated.put("enabled", enabled);
+      restClient
+          .put()
+          .uri("/admin/realms/{realm}/users/{id}", realm, authSubject)
+          .header(HttpHeaders.AUTHORIZATION, bearer(token))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(updated)
+          .retrieve()
+          .toBodilessEntity();
+    } catch (RestClientException exception) {
+      throw new IdentityProviderUnavailableException(
+          "Identity provider did not update the user status", exception);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private void grantBusinessRoleAccess(String authSubject, Long tenantId, String roleName) {
     String token = adminToken();
     try {
       Map<String, Object> user =
@@ -144,10 +207,10 @@ class KeycloakIdentityProvider implements IdentityProvider {
           .retrieve()
           .toBodilessEntity();
 
-      Map<String, Object> ownerRole =
+      Map<String, Object> role =
           restClient
               .get()
-              .uri("/admin/realms/{realm}/roles/OWNER", realm)
+              .uri("/admin/realms/{realm}/roles/{role}", realm, roleName)
               .header(HttpHeaders.AUTHORIZATION, bearer(token))
               .retrieve()
               .body(Map.class);
@@ -156,7 +219,7 @@ class KeycloakIdentityProvider implements IdentityProvider {
           .uri("/admin/realms/{realm}/users/{id}/role-mappings/realm", realm, authSubject)
           .header(HttpHeaders.AUTHORIZATION, bearer(token))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(new ArrayList<>(List.of(ownerRole)))
+          .body(new ArrayList<>(List.of(role)))
           .retrieve()
           .toBodilessEntity();
     } catch (RestClientException exception) {

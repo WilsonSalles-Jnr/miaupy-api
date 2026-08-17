@@ -1,6 +1,7 @@
 package com.miaupy.clinical.domain;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 public record ClinicalHistoryEvent(
@@ -12,4 +13,6 @@ public record ClinicalHistoryEvent(
     String summary,
     Instant occurredAt,
     String recordedBy,
+    String recordedByName,
+    Map<String, Object> details,
     Instant createdAt) {}

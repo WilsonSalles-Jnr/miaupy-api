@@ -4,6 +4,8 @@ public interface ActorContext {
 
   AuthenticatedActor getRequiredActor();
 
+  String getRequiredActorDisplayName();
+
   String getRequiredConsumerSubject();
 
   ConsumerIdentity getRequiredVerifiedConsumerIdentity();

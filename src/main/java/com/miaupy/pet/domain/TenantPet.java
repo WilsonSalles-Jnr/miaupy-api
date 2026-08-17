@@ -52,12 +52,34 @@ public record TenantPet(
         null);
   }
 
-  public static TenantPet linkConsumer(Long tenantId, UUID customerId, UUID consumerPetId,
-      String name, String species, String breed, LocalDate birthDate, PetSex sex,
+  public static TenantPet linkConsumer(
+      Long tenantId,
+      UUID customerId,
+      UUID consumerPetId,
+      String name,
+      String species,
+      String breed,
+      LocalDate birthDate,
+      PetSex sex,
       BigDecimal weight) {
     Instant now = Instant.now();
-    return new TenantPet(UUID.randomUUID(), tenantId, customerId, consumerPetId, name, species,
-        breed, birthDate, sex, weight, null, true, null, now, now, null);
+    return new TenantPet(
+        UUID.randomUUID(),
+        tenantId,
+        customerId,
+        consumerPetId,
+        name,
+        species,
+        breed,
+        birthDate,
+        sex,
+        weight,
+        null,
+        true,
+        null,
+        now,
+        now,
+        null);
   }
 
   public TenantPet update(

@@ -112,8 +112,7 @@ class AppointmentConcurrencyIntegrationTest {
     var repository = new AppointmentRepositoryAdapter(springDataAppointments);
     var page =
         repository.findAllByConsumerProfileId(
-            profile,
-            PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt")));
+            profile, PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt")));
 
     assertThat(page.getContent()).extracting(item -> item.id()).containsExactly(appointment);
   }

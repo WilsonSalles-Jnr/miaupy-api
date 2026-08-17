@@ -19,7 +19,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -104,7 +106,22 @@ public class ClinicalUseCase {
                         null));
     MedicalRecord saved = clinical.save(record);
     history(
-        tenantId, petId, "MEDICAL_RECORD_UPDATED", saved.id(), "Prontuário atualizado", now, actor);
+        tenantId,
+        petId,
+        "MEDICAL_RECORD_UPDATED",
+        saved.id(),
+        "Prontuário atualizado",
+        now,
+        actor,
+        details(
+            "allergies",
+            saved.allergies(),
+            "chronicConditions",
+            saved.chronicConditions(),
+            "currentMedications",
+            saved.currentMedications(),
+            "notes",
+            saved.notes()));
     append(saved.id(), tenantId, petId, "clinical.medical-record.updated");
     return saved;
   }
@@ -148,7 +165,26 @@ public class ClinicalUseCase {
         saved.id(),
         "Consulta registrada",
         saved.occurredAt(),
-        actor);
+        actor,
+        details(
+            "appointmentId",
+            saved.appointmentId(),
+            "occurredAt",
+            saved.occurredAt(),
+            "reason",
+            saved.reason(),
+            "anamnesis",
+            saved.anamnesis(),
+            "clinicalFindings",
+            saved.clinicalFindings(),
+            "diagnosis",
+            saved.diagnosis(),
+            "treatmentPlan",
+            saved.treatmentPlan(),
+            "weight",
+            saved.weight(),
+            "temperature",
+            saved.temperature()));
     append(saved.id(), tenantId, petId, "clinical.consultation.created");
     return saved;
   }
@@ -177,7 +213,26 @@ public class ClinicalUseCase {
             null);
     Vaccination saved = clinical.save(value);
     history(
-        tenantId, petId, "VACCINATION_RECORDED", saved.id(), "Vacinação registrada", now, actor);
+        tenantId,
+        petId,
+        "VACCINATION_RECORDED",
+        saved.id(),
+        "Vacinação registrada",
+        now,
+        actor,
+        details(
+            "vaccineName",
+            saved.vaccineName(),
+            "manufacturer",
+            saved.manufacturer(),
+            "batchNumber",
+            saved.batchNumber(),
+            "administeredOn",
+            saved.administeredOn(),
+            "nextDueOn",
+            saved.nextDueOn(),
+            "notes",
+            saved.notes()));
     append(saved.id(), tenantId, petId, "clinical.vaccination.created");
     return saved;
   }
@@ -209,7 +264,31 @@ public class ClinicalUseCase {
             now,
             null);
     Prescription saved = clinical.save(value);
-    history(tenantId, petId, "PRESCRIPTION_ISSUED", saved.id(), "Receita emitida", now, actor);
+    history(
+        tenantId,
+        petId,
+        "PRESCRIPTION_ISSUED",
+        saved.id(),
+        "Receita emitida",
+        now,
+        actor,
+        details(
+            "consultationId",
+            saved.consultationId(),
+            "medication",
+            saved.medication(),
+            "dosage",
+            saved.dosage(),
+            "frequency",
+            saved.frequency(),
+            "duration",
+            saved.duration(),
+            "instructions",
+            saved.instructions(),
+            "issuedAt",
+            saved.issuedAt(),
+            "validUntil",
+            saved.validUntil()));
     append(saved.id(), tenantId, petId, "clinical.prescription.created");
     return saved;
   }
@@ -244,7 +323,22 @@ public class ClinicalUseCase {
             null);
     ClinicalAttachment saved = clinical.save(value);
     history(
-        tenantId, petId, "ATTACHMENT_ADDED", saved.id(), "Anexo clínico adicionado", now, actor);
+        tenantId,
+        petId,
+        "ATTACHMENT_ADDED",
+        saved.id(),
+        "Anexo clínico adicionado",
+        now,
+        actor,
+        details(
+            "consultationId",
+            saved.consultationId(),
+            "filename",
+            saved.originalFilename(),
+            "contentType",
+            saved.contentType(),
+            "sizeBytes",
+            saved.sizeBytes()));
     append(saved.id(), tenantId, petId, "clinical.attachment.created");
     return saved;
   }
@@ -284,7 +378,8 @@ public class ClinicalUseCase {
       UUID resource,
       String summary,
       Instant occurredAt,
-      String actor) {
+      String actor,
+      Map<String, Object> details) {
     clinical.appendHistory(
         new ClinicalHistoryEvent(
             UUID.randomUUID(),
@@ -295,7 +390,25 @@ public class ClinicalUseCase {
             summary,
             occurredAt,
             actor,
+            actorName(),
+            details,
             Instant.now()));
+  }
+
+  private String actorName() {
+    String name = actors.getRequiredActorDisplayName();
+    return name == null || name.isBlank() ? "Usuário Miaupy" : name;
+  }
+
+  private Map<String, Object> details(Object... values) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    for (int index = 0; index < values.length; index += 2) {
+      Object value = values[index + 1];
+      if (value != null && (!(value instanceof String text) || !text.isBlank())) {
+        result.put((String) values[index], value);
+      }
+    }
+    return Collections.unmodifiableMap(result);
   }
 
   private void append(UUID aggregateId, Long tenantId, UUID petId, String eventType) {

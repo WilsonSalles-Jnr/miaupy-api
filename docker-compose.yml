@@ -90,6 +90,9 @@ services:
     command:
       - |
         until /opt/keycloak/bin/kcadm.sh config credentials --server http://keycloak:8080 --realm master --user "$${KEYCLOAK_ADMIN_USERNAME}" --password "$${KEYCLOAK_ADMIN_PASSWORD}"; do sleep 2; done
+        for role in ADMIN RECEPTIONIST VETERINARIAN GROOMER CATALOG_MANAGER SCHEDULING_MANAGER ORDER_MANAGER; do
+          /opt/keycloak/bin/kcadm.sh get "roles/$${role}" -r miaupy >/dev/null 2>&1 || /opt/keycloak/bin/kcadm.sh create roles -r miaupy -s "name=$${role}"
+        done
         /opt/keycloak/bin/kcadm.sh update users/profile -r miaupy -f /config/miaupy-user-profile.json
         /opt/keycloak/bin/kcadm.sh update realms/miaupy -s loginTheme=miaupy -s internationalizationEnabled=true -s defaultLocale=pt-BR
     environment:

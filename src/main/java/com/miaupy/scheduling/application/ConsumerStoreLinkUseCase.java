@@ -20,8 +20,11 @@ public class ConsumerStoreLinkUseCase {
   private final TenantPetRepository tenantPets;
   private final OutboxWriter outbox;
 
-  public ConsumerStoreLinkUseCase(ConsumerPetRepository consumerPets,
-      TenantCustomerRepository customers, TenantPetRepository tenantPets, OutboxWriter outbox) {
+  public ConsumerStoreLinkUseCase(
+      ConsumerPetRepository consumerPets,
+      TenantCustomerRepository customers,
+      TenantPetRepository tenantPets,
+      OutboxWriter outbox) {
     this.consumerPets = consumerPets;
     this.customers = customers;
     this.tenantPets = tenantPets;
@@ -30,27 +33,64 @@ public class ConsumerStoreLinkUseCase {
 
   @Transactional
   public LinkedCustomerPet link(ConsumerProfile profile, UUID consumerPetId, Long tenantId) {
-    var consumerPet = consumerPets.findByIdAndOwnerId(consumerPetId, profile.id())
-        .orElseThrow(() -> new ResourceNotFoundException("Consumer pet not found"));
-    TenantCustomer customer = customers.findByConsumerProfileIdAndTenantId(profile.id(), tenantId)
-        .orElseGet(() -> {
-          TenantCustomer linked = customers.save(TenantCustomer.linkConsumer(tenantId, profile.id(),
-              profile.name(), profile.email(), profile.phone(), profile.document()));
-          outbox.append("TenantCustomer", linked.id(), "customer.linked", tenantId,
-              Map.of("customerId", linked.id(), "consumerProfileId", profile.id()));
-          return linked;
-        });
-    TenantPet pet = tenantPets.findByConsumerPetIdAndTenantId(consumerPetId, tenantId)
-        .filter(candidate -> candidate.tenantCustomerId().equals(customer.id()))
-        .orElseGet(() -> {
-          TenantPet linked = tenantPets.save(TenantPet.linkConsumer(tenantId, customer.id(),
-              consumerPet.id(), consumerPet.name(), consumerPet.species(), consumerPet.breed(),
-              consumerPet.birthDate(), consumerPet.sex(), consumerPet.weight()));
-          outbox.append("TenantPet", linked.id(), "pet.linked", tenantId,
-              Map.of("petId", linked.id(), "consumerPetId", consumerPet.id(),
-                  "customerId", customer.id()));
-          return linked;
-        });
+    var consumerPet =
+        consumerPets
+            .findByIdAndOwnerId(consumerPetId, profile.id())
+            .orElseThrow(() -> new ResourceNotFoundException("Consumer pet not found"));
+    TenantCustomer customer =
+        customers
+            .findByConsumerProfileIdAndTenantId(profile.id(), tenantId)
+            .orElseGet(
+                () -> {
+                  TenantCustomer linked =
+                      customers.save(
+                          TenantCustomer.linkConsumer(
+                              tenantId,
+                              profile.id(),
+                              profile.name(),
+                              profile.email(),
+                              profile.phone(),
+                              profile.document()));
+                  outbox.append(
+                      "TenantCustomer",
+                      linked.id(),
+                      "customer.linked",
+                      tenantId,
+                      Map.of("customerId", linked.id(), "consumerProfileId", profile.id()));
+                  return linked;
+                });
+    TenantPet pet =
+        tenantPets
+            .findByConsumerPetIdAndTenantId(consumerPetId, tenantId)
+            .filter(candidate -> candidate.tenantCustomerId().equals(customer.id()))
+            .orElseGet(
+                () -> {
+                  TenantPet linked =
+                      tenantPets.save(
+                          TenantPet.linkConsumer(
+                              tenantId,
+                              customer.id(),
+                              consumerPet.id(),
+                              consumerPet.name(),
+                              consumerPet.species(),
+                              consumerPet.breed(),
+                              consumerPet.birthDate(),
+                              consumerPet.sex(),
+                              consumerPet.weight()));
+                  outbox.append(
+                      "TenantPet",
+                      linked.id(),
+                      "pet.linked",
+                      tenantId,
+                      Map.of(
+                          "petId",
+                          linked.id(),
+                          "consumerPetId",
+                          consumerPet.id(),
+                          "customerId",
+                          customer.id()));
+                  return linked;
+                });
     return new LinkedCustomerPet(customer, pet);
   }
 

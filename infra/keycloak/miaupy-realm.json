@@ -25,7 +25,14 @@
   },
   "roles": {
     "realm": [
-      { "name": "OWNER", "description": "Owner of a provider tenant" }
+      { "name": "OWNER", "description": "Owner of a provider tenant" },
+      { "name": "ADMIN", "description": "Business administrator" },
+      { "name": "RECEPTIONIST", "description": "Reception and customer service" },
+      { "name": "VETERINARIAN", "description": "Veterinary professional" },
+      { "name": "GROOMER", "description": "Grooming professional" },
+      { "name": "CATALOG_MANAGER", "description": "Catalog manager" },
+      { "name": "SCHEDULING_MANAGER", "description": "Scheduling manager" },
+      { "name": "ORDER_MANAGER", "description": "Order manager" }
     ]
   },
   "clients": [

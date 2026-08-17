@@ -5,6 +5,7 @@ import com.miaupy.business.domain.BusinessConfigurationRepository;
 import com.miaupy.business.domain.BusinessRepository;
 import com.miaupy.catalog.domain.OfferedService;
 import com.miaupy.catalog.domain.OfferedServiceRepository;
+import com.miaupy.employee.application.EmployeeDirectory;
 import com.miaupy.scheduling.domain.Appointment;
 import com.miaupy.scheduling.domain.AppointmentRepository;
 import com.miaupy.scheduling.domain.AvailabilityRule;
@@ -29,6 +30,7 @@ public class AvailabilityUseCase {
   private final OfferedServiceRepository services;
   private final AvailabilityRuleRepository rules;
   private final AppointmentRepository appointments;
+  private final EmployeeDirectory employees;
 
   public AvailabilityUseCase(
       TenantContext tenants,
@@ -36,13 +38,15 @@ public class AvailabilityUseCase {
       BusinessConfigurationRepository configurations,
       OfferedServiceRepository services,
       AvailabilityRuleRepository rules,
-      AppointmentRepository appointments) {
+      AppointmentRepository appointments,
+      EmployeeDirectory employees) {
     this.tenants = tenants;
     this.businesses = businesses;
     this.configurations = configurations;
     this.services = services;
     this.rules = rules;
     this.appointments = appointments;
+    this.employees = employees;
   }
 
   @Transactional
@@ -51,8 +55,11 @@ public class AvailabilityUseCase {
       java.time.DayOfWeek day,
       java.time.LocalTime start,
       java.time.LocalTime end) {
-    return rules.save(
-        AvailabilityRule.create(tenants.getRequiredTenantId(), employeeId, day, start, end));
+    Long tenantId = tenants.getRequiredTenantId();
+    if (employeeId != null) {
+      employees.requireActive(employeeId, tenantId);
+    }
+    return rules.save(AvailabilityRule.create(tenantId, employeeId, day, start, end));
   }
 
   @Transactional(readOnly = true)
@@ -83,6 +90,9 @@ public class AvailabilityUseCase {
             .orElseThrow(() -> new ResourceNotFoundException("Business settings not found"));
     if (!settings.allowOnlineBooking()) {
       return List.of();
+    }
+    if (employeeId != null) {
+      employees.requireActive(employeeId, business.tenantId());
     }
     OfferedService service =
         services

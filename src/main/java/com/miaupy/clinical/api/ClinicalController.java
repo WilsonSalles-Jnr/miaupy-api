@@ -22,6 +22,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -370,7 +371,8 @@ public class ClinicalController {
       UUID resourceId,
       String summary,
       Instant occurredAt,
-      String recordedBy) {
+      String recordedByName,
+      Map<String, Object> details) {
     static HistoryResponse from(ClinicalHistoryEvent value) {
       return new HistoryResponse(
           value.id(),
@@ -378,7 +380,8 @@ public class ClinicalController {
           value.resourceId(),
           value.summary(),
           value.occurredAt(),
-          value.recordedBy());
+          value.recordedByName(),
+          value.details());
     }
   }
 }

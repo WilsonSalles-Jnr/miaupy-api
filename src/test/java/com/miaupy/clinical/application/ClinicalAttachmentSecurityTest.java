@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.miaupy.clinical.domain.ClinicalAttachment;
+import com.miaupy.clinical.domain.ClinicalHistoryEvent;
 import com.miaupy.clinical.domain.ClinicalRepository;
 import com.miaupy.integration.outbox.OutboxWriter;
 import com.miaupy.pet.domain.TenantPet;
@@ -21,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class ClinicalAttachmentSecurityTest {
   @Test
@@ -34,7 +36,13 @@ class ClinicalAttachmentSecurityTest {
     assertThat(saved.originalFilename()).isEqualTo("exam.pdf");
     assertThat(saved.sha256()).hasSize(64);
     assertThat(saved.content()).containsExactly(pdf);
-    verify(f.clinical).appendHistory(any());
+    ArgumentCaptor<ClinicalHistoryEvent> history =
+        ArgumentCaptor.forClass(ClinicalHistoryEvent.class);
+    verify(f.clinical).appendHistory(history.capture());
+    assertThat(history.getValue().recordedByName()).isEqualTo("Dra. Maria");
+    assertThat(history.getValue().details())
+        .containsEntry("filename", "exam.pdf")
+        .containsEntry("contentType", "application/pdf");
     verify(f.outbox).append(any(), any(), any(), any(), any());
   }
 
@@ -70,6 +78,7 @@ class ClinicalAttachmentSecurityTest {
           .thenReturn(Optional.of(mock(TenantPet.class)));
       when(actors.getRequiredActor())
           .thenReturn(new AuthenticatedActor("veterinarian-subject", ActorType.B2B));
+      when(actors.getRequiredActorDisplayName()).thenReturn("Dra. Maria");
       when(clinical.save(any(ClinicalAttachment.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
       useCase =

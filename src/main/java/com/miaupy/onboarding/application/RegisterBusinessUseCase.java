@@ -67,8 +67,7 @@ public class RegisterBusinessUseCase {
     String subject = identity.createdSubject().orElseThrow();
     BusinessRegistration registration;
     try {
-      registration =
-          transaction.prepare(subject, idempotencyKey, fingerprint, normalizedCommand);
+      registration = transaction.prepare(subject, idempotencyKey, fingerprint, normalizedCommand);
     } catch (RuntimeException exception) {
       identityProvider.deleteUnverifiedUser(subject);
       throw exception;

@@ -1,5 +1,8 @@
 package com.miaupy.clinical.infrastructure.persistence;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.miaupy.clinical.domain.ClinicalAttachment;
 import com.miaupy.clinical.domain.ClinicalHistoryEvent;
 import com.miaupy.clinical.domain.ClinicalRepository;
@@ -12,6 +15,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -24,6 +28,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 class JdbcClinicalRepository implements ClinicalRepository {
+  private static final TypeReference<Map<String, Object>> DETAILS_TYPE = new TypeReference<>() {};
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
   private final JdbcTemplate jdbc;
 
   JdbcClinicalRepository(JdbcTemplate jdbc) {
@@ -191,7 +197,7 @@ class JdbcClinicalRepository implements ClinicalRepository {
 
   public void appendHistory(ClinicalHistoryEvent value) {
     jdbc.update(
-        "INSERT INTO clinical.history_event(id,tenant_id,tenant_pet_id,event_type,resource_id,summary,occurred_at,recorded_by,created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO clinical.history_event(id,tenant_id,tenant_pet_id,event_type,resource_id,summary,occurred_at,recorded_by,recorded_by_name,details,created_at) VALUES (?,?,?,?,?,?,?,?,?,CAST(? AS jsonb),?)",
         value.id(),
         value.tenantId(),
         value.tenantPetId(),
@@ -200,6 +206,8 @@ class JdbcClinicalRepository implements ClinicalRepository {
         value.summary(),
         timestamp(value.occurredAt()),
         value.recordedBy(),
+        value.recordedByName(),
+        writeDetails(value.details()),
         timestamp(value.createdAt()));
   }
 
@@ -270,7 +278,26 @@ class JdbcClinicalRepository implements ClinicalRepository {
             rs.getString("summary"),
             instant(rs, "occurred_at"),
             rs.getString("recorded_by"),
+            rs.getString("recorded_by_name"),
+            readDetails(rs.getString("details")),
             instant(rs, "created_at"));
+  }
+
+  private String writeDetails(Map<String, Object> details) {
+    try {
+      return OBJECT_MAPPER.writeValueAsString(details);
+    } catch (JsonProcessingException exception) {
+      throw new IllegalArgumentException(
+          "Clinical history details could not be serialized", exception);
+    }
+  }
+
+  private Map<String, Object> readDetails(String details) throws SQLException {
+    try {
+      return OBJECT_MAPPER.readValue(details, DETAILS_TYPE);
+    } catch (JsonProcessingException exception) {
+      throw new SQLException("Clinical history details could not be read", exception);
+    }
   }
 
   private UUID uuid(ResultSet rs, String column) throws SQLException {

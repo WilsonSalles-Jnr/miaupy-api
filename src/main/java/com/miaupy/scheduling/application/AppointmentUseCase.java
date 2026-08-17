@@ -8,6 +8,7 @@ import com.miaupy.business.domain.BusinessSettings;
 import com.miaupy.consumer.application.ConsumerProfileUseCase;
 import com.miaupy.consumer.domain.ConsumerProfile;
 import com.miaupy.customer.domain.TenantCustomer;
+import com.miaupy.employee.application.EmployeeDirectory;
 import com.miaupy.pet.domain.TenantPet;
 import com.miaupy.scheduling.domain.Appointment;
 import com.miaupy.scheduling.domain.AppointmentConflictException;
@@ -38,6 +39,7 @@ public class AppointmentUseCase {
   private final AppointmentLock lock;
   private final AvailabilityUseCase availability;
   private final ConsumerStoreLinkUseCase storeLinks;
+  private final EmployeeDirectory employees;
 
   public AppointmentUseCase(
       TenantContext tenantContext,
@@ -48,7 +50,8 @@ public class AppointmentUseCase {
       AppointmentTransaction transaction,
       AppointmentLock lock,
       AvailabilityUseCase availability,
-      ConsumerStoreLinkUseCase storeLinks) {
+      ConsumerStoreLinkUseCase storeLinks,
+      EmployeeDirectory employees) {
     this.tenantContext = tenantContext;
     this.businesses = businesses;
     this.configurations = configurations;
@@ -58,10 +61,14 @@ public class AppointmentUseCase {
     this.lock = lock;
     this.availability = availability;
     this.storeLinks = storeLinks;
+    this.employees = employees;
   }
 
   public Appointment createBusiness(Command command) {
     Long tenantId = tenantContext.getRequiredTenantId();
+    if (command.employeeId() != null) {
+      employees.requireActive(command.employeeId(), tenantId);
+    }
     return create(
         new AppointmentTransaction.CreateCommand(
             tenantId,
@@ -81,6 +88,9 @@ public class AppointmentUseCase {
         businesses
             .findPublicBySlug(command.storeSlug().strip().toLowerCase())
             .orElseThrow(() -> new ResourceNotFoundException("Public store not found"));
+    if (command.employeeId() != null) {
+      employees.requireActive(command.employeeId(), business.tenantId());
+    }
     ConsumerStoreLinkUseCase.LinkedCustomerPet link =
         storeLinks.link(profile, command.consumerPetId(), business.tenantId());
     TenantCustomer customer = link.customer();

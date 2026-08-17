@@ -153,6 +153,8 @@ class JdbcClinicalRepositoryIntegrationTest {
             "Consultation recorded",
             now,
             actor,
+            "Veterinarian Test",
+            java.util.Map.of("reason", "Annual check-up"),
             now));
 
     assertThat(
@@ -161,6 +163,13 @@ class JdbcClinicalRepositoryIntegrationTest {
                 Long.class,
                 tenant))
         .isEqualTo(1L);
+    ClinicalHistoryEvent history =
+        repository
+            .findHistory(pet, tenant, org.springframework.data.domain.PageRequest.of(0, 10))
+            .getContent()
+            .getFirst();
+    assertThat(history.recordedByName()).isEqualTo("Veterinarian Test");
+    assertThat(history.details()).containsEntry("reason", "Annual check-up");
   }
 
   private UUID seedTenantPet(long tenant) {

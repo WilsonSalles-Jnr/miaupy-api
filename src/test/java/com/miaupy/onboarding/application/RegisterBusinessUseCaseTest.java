@@ -24,13 +24,11 @@ class RegisterBusinessUseCaseTest {
 
   private RegisterBusinessUseCase useCase;
   private final BusinessRegistrationCommand command =
-      new BusinessRegistrationCommand(
-          "pet-store", "Pet Store", null, null, null, null, null, null);
+      new BusinessRegistrationCommand("pet-store", "Pet Store", null, null, null, null, null, null);
 
   @BeforeEach
   void setUp() {
-    useCase =
-        new RegisterBusinessUseCase(identities, rateLimiter, transaction, new ObjectMapper());
+    useCase = new RegisterBusinessUseCase(identities, rateLimiter, transaction, new ObjectMapper());
   }
 
   @Test
@@ -58,12 +56,7 @@ class RegisterBusinessUseCaseTest {
                 Instant.now()));
 
     useCase.execute(
-        "127.0.0.1",
-        key,
-        " Owner ",
-        " Owner@Example.com ",
-        "safe passphrase 123",
-        command);
+        "127.0.0.1", key, " Owner ", " Owner@Example.com ", "safe passphrase 123", command);
 
     verify(rateLimiter).check("127.0.0.1", "owner@example.com");
     verify(identities).grantBusinessAccess("business-subject", 50000001L);
@@ -78,13 +71,7 @@ class RegisterBusinessUseCaseTest {
     when(identities.registerBusiness("Owner", "owner@example.com", "safe passphrase 123"))
         .thenReturn(new IdentityProvider.RegistrationResult(false, null));
 
-    useCase.execute(
-        "127.0.0.1",
-        key,
-        "Owner",
-        "owner@example.com",
-        "safe passphrase 123",
-        command);
+    useCase.execute("127.0.0.1", key, "Owner", "owner@example.com", "safe passphrase 123", command);
 
     verify(transaction, never())
         .prepare(

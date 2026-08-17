@@ -42,6 +42,19 @@ public class SecurityContextActorContext implements ActorContext {
   }
 
   @Override
+  public String getRequiredActorDisplayName() {
+    Jwt jwt = getRequiredJwt();
+    String name = jwt.getClaimAsString("name");
+    if (name == null || name.isBlank()) {
+      name = jwt.getClaimAsString("preferred_username");
+    }
+    if (name == null || name.isBlank()) {
+      name = jwt.getClaimAsString("email");
+    }
+    return name == null || name.isBlank() ? "Usuário Miaupy" : name;
+  }
+
+  @Override
   public ConsumerIdentity getRequiredVerifiedConsumerIdentity() {
     String subject = getRequiredConsumerSubject();
     Jwt jwt = getRequiredJwt();

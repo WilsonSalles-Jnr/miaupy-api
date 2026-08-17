@@ -58,6 +58,23 @@ class SecurityContextActorContextTest {
     assertThat(identity.subject()).isEqualTo("consumer-123");
     assertThat(identity.name()).isEqualTo("Jane Doe");
     assertThat(identity.email()).isEqualTo("jane@example.com");
+    assertThat(actorContext.getRequiredActorDisplayName()).isEqualTo("Jane Doe");
+  }
+
+  @Test
+  void fallsBackToPreferredUsernameForDisplayName() {
+    Jwt jwt =
+        Jwt.withTokenValue("token")
+            .header("alg", "none")
+            .issuedAt(Instant.now())
+            .expiresAt(Instant.now().plusSeconds(300))
+            .subject("employee-123")
+            .claim("actor_type", "B2B")
+            .claim("preferred_username", "maria.vet")
+            .build();
+    authenticate(jwt);
+
+    assertThat(actorContext.getRequiredActorDisplayName()).isEqualTo("maria.vet");
   }
 
   @Test

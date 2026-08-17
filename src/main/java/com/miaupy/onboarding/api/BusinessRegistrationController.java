@@ -56,18 +56,25 @@ public class BusinessRegistrationController {
   public record Request(
       @NotBlank @Size(max = 160) @Schema(description = "Nome do proprietário da conta empresarial.")
           String ownerName,
-      @NotBlank @Email @Size(max = 254) @Schema(description = "E-mail usado para login e verificação.")
+      @NotBlank
+          @Email
+          @Size(max = 254)
+          @Schema(description = "E-mail usado para login e verificação.")
           String email,
-      @NotBlank @Size(min = 12, max = 128) @Schema(description = "Senha enviada somente ao provedor de identidade.")
+      @NotBlank
+          @Size(min = 12, max = 128)
+          @Schema(description = "Senha enviada somente ao provedor de identidade.")
           String password,
-      @AssertTrue(message = "must be accepted") @Schema(description = "Aceite obrigatório dos termos da plataforma.")
+      @AssertTrue(message = "must be accepted")
+          @Schema(description = "Aceite obrigatório dos termos da plataforma.")
           boolean termsAccepted,
       @NotBlank
           @Size(max = 80)
           @Pattern(
               regexp = "[a-z0-9]+(?:-[a-z0-9]+)*",
               message = "must contain lowercase letters, numbers and single hyphens only")
-          @Schema(description = "Slug público único da empresa.") String slug,
+          @Schema(description = "Slug público único da empresa.")
+          String slug,
       @NotBlank @Size(max = 160) @Schema(description = "Razão social ou nome empresarial.")
           String name,
       @Size(max = 160) @Schema(description = "Nome fantasia da empresa.") String tradeName,
@@ -75,7 +82,9 @@ public class BusinessRegistrationController {
       @Size(max = 2000) @Schema(description = "Descrição exibida na vitrine pública.")
           String description,
       @Size(max = 32) @Schema(description = "Telefone comercial.") String phone,
-      @Email @Size(max = 254) @Schema(description = "E-mail público; usa o e-mail do proprietário quando omitido.")
+      @Email
+          @Size(max = 254)
+          @Schema(description = "E-mail público; usa o e-mail do proprietário quando omitido.")
           String businessEmail,
       @Size(max = 500) @Schema(description = "Website público da empresa.") String website) {
     BusinessRegistrationCommand toCommand() {
